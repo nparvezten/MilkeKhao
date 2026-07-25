@@ -1,42 +1,28 @@
-# Phase 0 Completion Notes: Solution Scaffold & Multi-Tenant Foundation
+# Phase Completion Notes
 
-## What Was Built
-1. **Repository & Solution Structure:**
-   - Created `.gitignore` tailored for .NET and Angular monorepos.
-   - Initialized Git repository, linked remote `https://github.com/nparvezten/MilkeKhao.git`, and completed initial push of documentation (`AGENTS.md`, `PHASE_PLAN.md`, `README.md`, `LICENSE.md`, `.gitignore`).
-   - Created .NET solution `MilkeKhao.sln` with Clean Architecture projects:
-     - `src/backend/MilkeKhao.Domain`
-     - `src/backend/MilkeKhao.Application`
-     - `src/backend/MilkeKhao.Infrastructure`
-     - `src/backend/MilkeKhao.Api`
-     - `tests/MilkeKhao.UnitTests`
+## Phase 1 Summary: Enterprise Clean Architecture Backend Skeleton
+- **Domain Layer (`MilkeKhao.Domain`)**: Created aggregate roots (`Tenant`, `Order`, `MenuItem`, `Category`, `User`, `Driver`), value objects (`Money`, `Address`, `OrderItem`), enums (`OrderStatus`, `UserRole`, `DeliveryMode`, `PaymentMethod`), owned entity (`TenantFeatureSettings`), domain events (`OrderPlacedEvent`, `OrderStatusUpdatedEvent`, `PaymentCapturedEvent`, `PaymentFailedEvent`, `DriverAssignedEvent`), and `ITenantScoped` interface.
+- **Application Layer (`MilkeKhao.Application`)**: Added CQRS handler interfaces via `Mediator` (MIT-licensed source generator), `ITenantContext` resolution service interface, `IPaymentProvider` & `IAggregatorDispatchClient` abstractions.
+- **Infrastructure Layer (`MilkeKhao.Infrastructure`)**: Built `MilkeKhaoDbContext` with EF Core, global tenant query filters on `ITenantScoped` entities, AES-256 PII field encryption with HMAC-SHA256 blind indexing for phone numbers, and default tenant seeding.
+- **API Presentation Layer (`MilkeKhao.Api`)**: Configured Web API host with strict versioning (`/api/v1/`), ProblemDetails (RFC 7807) exception handling middleware, custom JWT auth middleware deriving `TenantId` claim into `ITenantContext`, and Serilog logging.
+- **Unit Testing**: Verified EF Core global tenant isolation query filters with xUnit tests.
 
-2. **Multi-Tenant Domain Scaffolding:**
-   - `ITenantScoped` interface (`TenantId` property) in `MilkeKhao.Domain.Common`.
-   - `Tenant` aggregate root (`Id`, `Name`, `Slug`, `IsActive`, `CreatedAt`, `Settings`) in `MilkeKhao.Domain.Entities`.
-   - `TenantFeatureSettings` owned entity (`EnabledDeliveryModes`, `EnabledPaymentMethods`, `MaxStaffAccounts`, `GstRegistered`) with launch defaults (`Pickup`, `AggregatorDelivery` modes; `UpiIntent`, `UpiQr` payment methods; `MaxStaffAccounts = 1`).
+## Phase 2 Summary: Core Order Lifecycle & Multi-Tenant CQRS Operations
+- **CQRS Commands & Queries (`MilkeKhao.Application/Orders`)**:
+  - `CreateOrderCommand`: Validates menu items, calculates totals, creates `Order` with `OrderStatus.Pending` and `OrderStatusHistory`, and dispatches `OrderPlacedEvent`.
+  - `UpdateOrderStatusCommand`: Updates order state, records `PerformedByUserId` & notes in `OrderStatusHistory`, and dispatches `OrderStatusUpdatedEvent`.
+  - `GetOrderByIdQuery`: Fetches single tenant-scoped order.
+  - `GetKitchenActiveOrdersQuery`: Fetches active kitchen pipeline orders (`Pending`, `Accepted`, `Preparing`, `ReadyForPickup`) ordered by `CreatedAt`.
+- **API Endpoints (`MilkeKhao.Api/Controllers/OrdersController.cs`)**: Exposed `/api/v1/orders` endpoints for customer order creation, kitchen status updates, and active order queue retrieval.
+- **Security & Multi-Tenancy Guardrail Verification**: Verified cross-tenant isolation and tenant context derivation across all handlers and unit tests.
+- **Unit Testing**: 5/5 xUnit unit tests passing cleanly.
+- **Security Audit**: `dotnet list package --vulnerable` reported 0 vulnerable packages.
 
-3. **Infrastructure & EF Core Isolation:**
-   - `ITenantContext` interface in `MilkeKhao.Application.Common.Interfaces`.
-   - `TestTenantContext` stub in `MilkeKhao.Infrastructure.Services` (hardcoded test tenant context for Phase 0).
-   - `MilkeKhaoDbContext` in `MilkeKhao.Infrastructure.Persistence` with dynamic EF Core global query filters applied to all `ITenantScoped` entities.
-
-4. **Testing & Verification:**
-   - Added xUnit test suite `tests/MilkeKhao.UnitTests/TenantQueryFilterTests.cs`.
-   - Verified that global query filtering excludes data belonging to other tenants.
-   - Verified tenant initialization with launch default settings.
-   - `dotnet build` succeeded with 0 warnings / 0 errors.
-   - `dotnet test` passed 100% (2/2 tests passed).
-   - `dotnet list package --vulnerable` reported zero vulnerabilities.
-
-## Licensing Audit for Added Dependencies
-- `Microsoft.EntityFrameworkCore` (v9.0.1) — **MIT License** (OSI-approved, free for commercial use, no revenue/seat gate).
-- `Microsoft.EntityFrameworkCore.InMemory` (v9.0.1) — **MIT License** (OSI-approved, free for commercial use, no revenue/seat gate).
-- `Microsoft.NET.Test.Sdk` / `xunit` / `xunit.runner.visualstudio` — **MIT / Apache-2.0** (OSI-approved, free for commercial use, no revenue/seat gate).
-
-## What Was Deferred
-- Real JWT-based tenant context resolution (deferred to Phase 3 auth implementation).
-- Concrete business entities (`Order`, `MenuItem`, `Category`, `User`, `Driver`) and enums (deferred to Phase 1).
-
-## Assumptions Made
-- Targeted `.NET 9.0` runtime/SDK installed on host environment; all project definitions use `net9.0`.
+## Phase 3 Summary: Frontend PWA Architecture & Storefront / Kitchen Design System Setup
+- **Frontend Architecture (`src/frontend`)**: Created Angular 22+ Standalone Components application with Signal-based state management, responsive dark mode glassmorphism theme, and modern Indian culinary design system.
+- **Design System Tokens (`styles.css`)**: Implemented Spiced Saffron & Emerald Mint color palette, glassmorphism cards, badges (`🌱 VEG`, `🍖 NON-VEG`, status badges), and micro-animations.
+- **Tenant Context Switcher (`HeaderComponent`)**: Built dynamic header with tenant selection ("Swaad Foods" vs "Royal Biryani House") demonstrating real-time tenant feature settings toggles (`DeliveryMode`, `PaymentMethod`).
+- **Customer Storefront (`StorefrontComponent`)**: Interactive food menu with category filter pills ("Starters", "Main Course", "Breads & Rice", etc.), Veg-only toggle, search input, and responsive item grid with "Add to Cart" triggers.
+- **Shopping Cart & Checkout (`CartDrawerComponent`)**: Glassmorphism slide-over drawer with item quantity adjusters, subtotal calculation, delivery mode selector (`Pickup`, `InHouseDelivery`), address entry, payment option selection (`UPI Direct Intent`, `UPI QR`), GST calculation, and order submission.
+- **Kitchen Display System (`KitchenKdsComponent`)**: 4-column live workflow pipeline (`Pending`, `Accepted`, `In Preparation`, `Ready for Pickup`) allowing kitchen staff to transition orders through their lifecycle in real-time.
+- **Verification**: `npm run build` completed cleanly in 2.95s, producing 0 production vulnerabilities (`npm audit --omit=dev`).

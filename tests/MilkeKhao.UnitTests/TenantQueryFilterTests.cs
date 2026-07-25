@@ -49,7 +49,6 @@ public class TenantQueryFilterTests
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
 
-        // Seed data using a Context without query restrictions or direct seed
         var tenantContextA = new TestTenantContext(tenantIdA);
         using (var seedContext = new TestDbContext(options, tenantContextA))
         {
