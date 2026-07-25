@@ -1,0 +1,95 @@
+name: MilkeKhao CI/CD & VAPT Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  backend-build-test-sast:
+    name: Backend Build, Unit Tests & SecurityCodeScan SAST
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore Dependencies
+        run: dotnet restore MilkeKhao.sln
+
+      - name: Add SecurityCodeScan Roslyn Analyzer
+        run: dotnet add src/backend/MilkeKhao.Api/MilkeKhao.Api.csproj package SecurityCodeScan.VS2019 --version 5.6.7 || true
+
+      - name: Build Solution
+        run: dotnet build MilkeKhao.sln -c Release --no-restore
+
+      - name: Run xUnit Unit & Isolation Tests
+        run: dotnet test MilkeKhao.sln -c Release --no-build --verbosity normal
+
+      - name: Check NuGet Vulnerabilities
+        run: dotnet list package --vulnerable
+
+  frontend-build-audit:
+    name: Frontend Angular PWA Build & Security Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Frontend Dependencies
+        run: npm ci
+        working-directory: ./src/frontend
+
+      - name: Build Angular PWA Production Bundle
+        run: npm run build
+        working-directory: ./src/frontend
+
+      - name: Audit Production Packages
+        run: npm audit --omit=dev
+        working-directory: ./src/frontend
+
+  semgrep-sast:
+    name: Semgrep OSS SAST Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run Semgrep Security Rulesets (OWASP Top 10)
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >-
+            p/security-audit
+            p/owasp-top-10
+            p/csharp
+            p/typescript
+
+  dast-owasp-zap:
+    name: OWASP ZAP DAST API Security Scan
+    needs: [backend-build-test-sast, frontend-build-audit]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Start Full Stack Staging Container
+        run: docker-compose up -d --build
+
+      - name: OWASP ZAP API Security Top 10 Scan
+        uses: zaproxy/action-baseline@v0.12.0
+        with:
+          target: 'http://localhost:5000'
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-a -j -z "-config api.disablekey=true"'

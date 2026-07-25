@@ -1,0 +1,52 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: milkekhao_postgres
+    environment:
+      POSTGRES_DB: milkekhaodb
+      POSTGRES_USER: milkekhao_user
+      POSTGRES_PASSWORD: enterprise_secure_password_2026!
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # Valkey 8.0 (BSD-3-Clause open-source fork of Redis — zero commercial license restriction)
+  valkey:
+    image: valkey/valkey:8.0-alpine
+    container_name: milkekhao_valkey
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: milkekhao_api
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=milkekhaodb;Username=milkekhao_user;Password=enterprise_secure_password_2026!
+      - Jwt__SecretKey=MilkeKhao_Super_Secret_Enterprise_JWT_Key_2026_Must_Be_At_Least_256_Bits!
+      - Jwt__Issuer=MilkeKhaoAPI
+      - Jwt__Audience=MilkeKhaoClients
+    ports:
+      - "5000:80"
+    depends_on:
+      - postgres
+      - valkey
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./src/frontend
+      dockerfile: Dockerfile
+    container_name: milkekhao_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

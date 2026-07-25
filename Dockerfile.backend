@@ -1,0 +1,22 @@
+# Multi-stage build for .NET 9 Web API
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+
+COPY ["MilkeKhao.sln", "./"]
+COPY ["src/backend/MilkeKhao.Domain/MilkeKhao.Domain.csproj", "src/backend/MilkeKhao.Domain/"]
+COPY ["src/backend/MilkeKhao.Application/MilkeKhao.Application.csproj", "src/backend/MilkeKhao.Application/"]
+COPY ["src/backend/MilkeKhao.Infrastructure/MilkeKhao.Infrastructure.csproj", "src/backend/MilkeKhao.Infrastructure/"]
+COPY ["src/backend/MilkeKhao.Api/MilkeKhao.Api.csproj", "src/backend/MilkeKhao.Api/"]
+COPY ["tests/MilkeKhao.UnitTests/MilkeKhao.UnitTests.csproj", "tests/MilkeKhao.UnitTests/"]
+
+RUN dotnet restore "MilkeKhao.sln"
+
+COPY . .
+WORKDIR "/src/src/backend/MilkeKhao.Api"
+RUN dotnet publish "MilkeKhao.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
+
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
+WORKDIR /app
+COPY --from=build /app/publish .
+EXPOSE 80
+ENTRYPOINT ["dotnet", "MilkeKhao.Api.dll"]
