@@ -1,0 +1,60 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{E70BD56E-D799-4D97-999E-53CE0E09FB17}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "backend", "backend", "{C0BBF1E9-E441-4E6B-9AF5-CF50891168F3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MilkeKhao.Domain", "src\backend\MilkeKhao.Domain\MilkeKhao.Domain.csproj", "{A5EFCC12-4FB7-4253-9979-C0E07AEF0802}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MilkeKhao.Application", "src\backend\MilkeKhao.Application\MilkeKhao.Application.csproj", "{8DC0AFFE-C5D8-475C-8B90-63A168D77F0C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MilkeKhao.Infrastructure", "src\backend\MilkeKhao.Infrastructure\MilkeKhao.Infrastructure.csproj", "{B413D643-D6A5-42C0-B526-BC97E3F4531B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MilkeKhao.Api", "src\backend\MilkeKhao.Api\MilkeKhao.Api.csproj", "{74AD326D-C1F0-42E9-911F-9BF454624E28}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{1FEB7400-5B44-4408-BE66-C12ED5C1599A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MilkeKhao.UnitTests", "tests\MilkeKhao.UnitTests\MilkeKhao.UnitTests.csproj", "{95BDC2FA-DE25-4560-9B6F-75D0C7AE3F10}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A5EFCC12-4FB7-4253-9979-C0E07AEF0802}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A5EFCC12-4FB7-4253-9979-C0E07AEF0802}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A5EFCC12-4FB7-4253-9979-C0E07AEF0802}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A5EFCC12-4FB7-4253-9979-C0E07AEF0802}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8DC0AFFE-C5D8-475C-8B90-63A168D77F0C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8DC0AFFE-C5D8-475C-8B90-63A168D77F0C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8DC0AFFE-C5D8-475C-8B90-63A168D77F0C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8DC0AFFE-C5D8-475C-8B90-63A168D77F0C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B413D643-D6A5-42C0-B526-BC97E3F4531B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B413D643-D6A5-42C0-B526-BC97E3F4531B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B413D643-D6A5-42C0-B526-BC97E3F4531B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B413D643-D6A5-42C0-B526-BC97E3F4531B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{74AD326D-C1F0-42E9-911F-9BF454624E28}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{74AD326D-C1F0-42E9-911F-9BF454624E28}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{74AD326D-C1F0-42E9-911F-9BF454624E28}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{74AD326D-C1F0-42E9-911F-9BF454624E28}.Release|Any CPU.Build.0 = Release|Any CPU
+		{95BDC2FA-DE25-4560-9B6F-75D0C7AE3F10}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{95BDC2FA-DE25-4560-9B6F-75D0C7AE3F10}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{95BDC2FA-DE25-4560-9B6F-75D0C7AE3F10}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{95BDC2FA-DE25-4560-9B6F-75D0C7AE3F10}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{C0BBF1E9-E441-4E6B-9AF5-CF50891168F3} = {E70BD56E-D799-4D97-999E-53CE0E09FB17}
+		{A5EFCC12-4FB7-4253-9979-C0E07AEF0802} = {C0BBF1E9-E441-4E6B-9AF5-CF50891168F3}
+		{8DC0AFFE-C5D8-475C-8B90-63A168D77F0C} = {C0BBF1E9-E441-4E6B-9AF5-CF50891168F3}
+		{B413D643-D6A5-42C0-B526-BC97E3F4531B} = {C0BBF1E9-E441-4E6B-9AF5-CF50891168F3}
+		{74AD326D-C1F0-42E9-911F-9BF454624E28} = {C0BBF1E9-E441-4E6B-9AF5-CF50891168F3}
+		{95BDC2FA-DE25-4560-9B6F-75D0C7AE3F10} = {1FEB7400-5B44-4408-BE66-C12ED5C1599A}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,6 @@
+@MilkeKhao.Api_HostAddress = http://localhost:5007
+
+GET {{MilkeKhao.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
