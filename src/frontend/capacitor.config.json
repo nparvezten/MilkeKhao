@@ -1,0 +1,14 @@
+{
+  "appId": "com.milkekhao.app",
+  "appName": "MilkeKhao",
+  "webDir": "dist/frontend/browser",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    }
+  }
+}

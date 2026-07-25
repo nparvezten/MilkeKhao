@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TenantService } from '../../services/tenant.service';
 import { CartService } from '../../services/cart.service';
@@ -8,167 +8,160 @@ import { CartService } from '../../services/cart.service';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <header class="glass-panel header-container">
-      <div class="brand-section">
-        <div class="logo-icon">🍲</div>
-        <div>
-          <h1 class="brand-title">MilkeKhao</h1>
-          <p class="brand-subtitle">Multi-Tenant Food Delivery</p>
+    <header class="main-header glass-panel">
+      <div class="header-container">
+        <!-- Brand Logo & Tenant Switcher -->
+        <div class="brand-section">
+          <div class="logo">
+            <span class="logo-icon">🍲</span>
+            <span class="logo-text">MilkeKhao</span>
+          </div>
+
+          <!-- Multi-Tenant Dropdown -->
+          <div class="tenant-selector">
+            <select
+              [value]="tenantService.activeTenant().id"
+              (change)="onTenantChange($event)"
+              class="tenant-select"
+            >
+              @for (tenant of tenantService.availableTenants; track tenant.id) {
+                <option [value]="tenant.id">{{ tenant.name }}</option>
+              }
+            </select>
+          </div>
         </div>
-      </div>
 
-      <div class="tenant-selector">
-        <span class="tenant-label">Restaurant Context:</span>
-        <select
-          [value]="tenantService.activeTenant().id"
-          (change)="onTenantChange($event)"
-          class="tenant-dropdown"
-        >
-          @for (tenant of tenantService.availableTenants; track tenant.id) {
-            <option [value]="tenant.id">{{ tenant.name }}</option>
-          }
-        </select>
-      </div>
-
-      <div class="nav-controls">
-        <div class="view-toggle">
+        <!-- Navigation Tabs -->
+        <nav class="nav-tabs">
           <button
-            class="toggle-btn"
+            class="tab-btn"
             [class.active]="activeView === 'storefront'"
             (click)="viewChange.emit('storefront')"
           >
-            🛒 Customer Store
+            🛍️ Storefront
           </button>
           <button
-            class="toggle-btn"
+            class="tab-btn"
             [class.active]="activeView === 'kitchen'"
             (click)="viewChange.emit('kitchen')"
           >
             👨‍🍳 Kitchen KDS
           </button>
-        </div>
+          <button
+            class="tab-btn"
+            [class.active]="activeView === 'driver'"
+            (click)="viewChange.emit('driver')"
+          >
+            🛵 Driver Dispatch
+          </button>
+          <button
+            class="tab-btn"
+            [class.active]="activeView === 'owner'"
+            (click)="viewChange.emit('owner')"
+          >
+            👑 Owner Analytics
+          </button>
+        </nav>
 
-        @if (activeView === 'storefront') {
-          <button class="btn btn-primary cart-trigger" (click)="cartService.toggleCart()">
-            <span>🛒 Cart</span>
+        <!-- Cart Trigger Button -->
+        <div class="header-actions">
+          <button class="btn btn-primary cart-btn" (click)="cartService.toggleCart()">
+            🛒 Cart
             @if (cartService.itemCount() > 0) {
               <span class="cart-badge">{{ cartService.itemCount() }}</span>
-              <span class="cart-total">₹{{ cartService.totalAmount() }}</span>
             }
           </button>
-        }
+        </div>
       </div>
     </header>
   `,
   styles: [`
-    .header-container {
+    .main-header {
       position: sticky;
       top: 0;
       z-index: 100;
+      border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+      margin-bottom: 24px;
+      padding: 12px 24px;
+    }
+    .header-container {
+      max-width: 1400px;
+      margin: 0 auto;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 12px 24px;
-      margin: 12px 16px;
-      border-radius: var(--radius-lg);
     }
     .brand-section {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 16px;
     }
-    .logo-icon {
-      font-size: 2rem;
-      background: rgba(255, 107, 53, 0.15);
-      padding: 6px;
-      border-radius: var(--radius-md);
-      border: 1px solid rgba(255, 107, 53, 0.3);
-    }
-    .brand-title {
-      font-size: 1.5rem;
-      background: linear-gradient(135deg, var(--text-primary), var(--accent-primary));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    .brand-subtitle {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-    }
-    .tenant-selector {
+    .logo {
       display: flex;
       align-items: center;
       gap: 8px;
-      background: rgba(0, 0, 0, 0.2);
-      padding: 6px 14px;
-      border-radius: var(--radius-md);
-      border: 1px solid var(--border-color);
-    }
-    .tenant-label {
-      font-size: 0.8rem;
-      color: var(--text-secondary);
-    }
-    .tenant-dropdown {
-      background: transparent;
+      font-size: 1.3rem;
+      font-weight: 800;
       color: var(--accent-gold);
-      font-weight: 600;
+    }
+    .logo-icon { font-size: 1.5rem; }
+    .tenant-select {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
       font-size: 0.85rem;
-      border: none;
       outline: none;
       cursor: pointer;
     }
-    .nav-controls {
+    .nav-tabs {
       display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-    .view-toggle {
-      display: flex;
+      gap: 8px;
       background: rgba(0, 0, 0, 0.3);
       padding: 4px;
       border-radius: var(--radius-md);
-      border: 1px solid var(--border-color);
     }
-    .toggle-btn {
-      padding: 6px 14px;
-      border-radius: var(--radius-sm);
-      border: none;
+    .tab-btn {
       background: transparent;
-      color: var(--text-secondary);
+      border: none;
+      color: var(--text-muted);
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
       font-size: 0.85rem;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
       transition: all var(--transition-fast);
     }
-    .toggle-btn.active {
+    .tab-btn.active {
       background: var(--accent-primary);
       color: #ffffff;
-      box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+      box-shadow: 0 2px 8px rgba(255, 107, 53, 0.4);
     }
-    .cart-trigger {
+    .cart-btn {
+      display: flex;
+      align-items: center;
       gap: 8px;
+      padding: 8px 16px;
+      font-size: 0.9rem;
     }
     .cart-badge {
       background: #ffffff;
       color: var(--accent-primary);
+      border-radius: 50%;
       width: 20px;
       height: 20px;
-      border-radius: 50%;
-      display: inline-flex;
+      display: flex;
       align-items: center;
       justify-content: center;
       font-size: 0.75rem;
       font-weight: 800;
     }
-    .cart-total {
-      font-weight: 700;
-      border-left: 1px solid rgba(255, 255, 255, 0.3);
-      padding-left: 8px;
-    }
   `]
 })
 export class HeaderComponent {
-  @Input() activeView: 'storefront' | 'kitchen' = 'storefront';
-  @Output() viewChange = new EventEmitter<'storefront' | 'kitchen'>();
+  @Input() activeView: 'storefront' | 'kitchen' | 'driver' | 'owner' = 'storefront';
+  @Output() viewChange = new EventEmitter<'storefront' | 'kitchen' | 'driver' | 'owner'>();
 
   constructor(
     public tenantService: TenantService,
@@ -176,9 +169,7 @@ export class HeaderComponent {
   ) {}
 
   onTenantChange(event: Event): void {
-    const target = event.target as HTMLSelectElement;
-    if (target) {
-      this.tenantService.setTenant(target.value);
-    }
+    const select = event.target as HTMLSelectElement;
+    this.tenantService.setTenant(select.value);
   }
 }

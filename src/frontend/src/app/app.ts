@@ -4,6 +4,8 @@ import { HeaderComponent } from './components/header/header';
 import { StorefrontComponent } from './components/storefront/storefront';
 import { CartDrawerComponent } from './components/cart-drawer/cart-drawer';
 import { KitchenKdsComponent } from './components/kitchen-kds/kitchen-kds';
+import { DriverDashboardComponent } from './components/driver-dashboard/driver-dashboard';
+import { OwnerDashboardComponent } from './components/owner-dashboard/owner-dashboard';
 
 @Component({
   selector: 'app-root',
@@ -13,7 +15,9 @@ import { KitchenKdsComponent } from './components/kitchen-kds/kitchen-kds';
     HeaderComponent,
     StorefrontComponent,
     CartDrawerComponent,
-    KitchenKdsComponent
+    KitchenKdsComponent,
+    DriverDashboardComponent,
+    OwnerDashboardComponent
   ],
   template: `
     <div class="app-wrapper">
@@ -25,8 +29,12 @@ import { KitchenKdsComponent } from './components/kitchen-kds/kitchen-kds';
       <main class="main-content">
         @if (activeView() === 'storefront') {
           <app-storefront />
-        } @else {
+        } @else if (activeView() === 'kitchen') {
           <app-kitchen-kds />
+        } @else if (activeView() === 'driver') {
+          <app-driver-dashboard />
+        } @else if (activeView() === 'owner') {
+          <app-owner-dashboard />
         }
       </main>
 
@@ -46,5 +54,5 @@ import { KitchenKdsComponent } from './components/kitchen-kds/kitchen-kds';
   `]
 })
 export class App {
-  readonly activeView = signal<'storefront' | 'kitchen'>('storefront');
+  readonly activeView = signal<'storefront' | 'kitchen' | 'driver' | 'owner'>('storefront');
 }

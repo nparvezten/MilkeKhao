@@ -44,3 +44,22 @@
 - **Auth CQRS & Endpoints (`AuthController.cs`)**: Built `LoginCommand` and `/api/v1/auth/login` supporting shared `KitchenAdmin` login and tenant-scoped credentials.
 - **Tenant Context Resolution (`TenantContextMiddleware.cs`)**: Automatically populates `ITenantContext` from JWT `tenant_id` claims or `X-Tenant-Id` header.
 - **Unit Testing**: 8/8 xUnit tests passing cleanly (`AuthSecurityTests.cs`).
+
+## Phase 7 & 8 Summary: Angular Frontend Base & Customer UI
+- **Auth & Tenant Services (`auth.service.ts`, `tenant.service.ts`)**: Signal-driven auth state manager storing JWT tokens in memory with role-based claim getters.
+- **Real-Time Order Tracking (`order-tracking.ts`)**: Customer order progress tracker component displaying real-time SignalR progress bar with closed-session email/SMS notification fallback banner.
+
+## Phase 9 Summary: Staff & Driver Dispatch UI
+- **In-House Driver Dispatch Dashboard (`driver-dashboard.ts`)**: Dedicated delivery manager interface for drivers handling `InHouseDelivery` orders with customer phone, address, and status update triggers (`Mark Picked Up`, `Mark Delivered`).
+- **Tab Navigation Shell (`header.ts`, `app.ts`)**: Seamless top header switching across Customer Storefront, Kitchen KDS, Driver Dispatch, and Owner Analytics.
+
+## Phase 10 Summary: Owner Analytics Dashboard
+- **Analytics CQRS Queries (`AnalyticsQueries.cs`)**: Implemented `GetSalesSummaryQuery`, `GetTopSellingItemsQuery`, and `GetOrdersByDeliveryModeQuery`.
+- **Analytics API (`AnalyticsController.cs`)**: Exposed `/api/v1/analytics/summary`, `/api/v1/analytics/top-items`, and `/api/v1/analytics/delivery-modes`.
+- **Owner Executive Dashboard (`owner-dashboard.ts`)**: Built executive owner UI featuring gross revenue KPIs, average order value (AOV), fulfillment success rates, top selling items ranking list, and fulfillment mode percentage breakdown.
+- **Unit Testing**: 9/9 xUnit unit tests passing cleanly (`AnalyticsTests.cs`).
+
+## Phase 11 Summary: Mobile App Packaging via Capacitor (Android & iOS)
+- **Capacitor Setup (`capacitor.config.json`)**: Configured native app container with `appId: "com.milkekhao.app"`, `appName: "MilkeKhao"`, and `webDir: "dist/frontend/browser"`.
+- **Packaging Guide (`MOBILE_PACKAGING_GUIDE.md`)**: Documented complete setup procedures for compiling Android Debug APKs via Android Studio and iOS apps via Xcode.
+- **Official Developer Fees**: Explicitly documented Google Play ($25 one-time) and Apple App Store ($99/year) developer account registration costs.
