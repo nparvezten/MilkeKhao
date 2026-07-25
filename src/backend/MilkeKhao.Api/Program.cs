@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using MilkeKhao.Api.Hubs;
 using MilkeKhao.Api.Middleware;
 using MilkeKhao.Application.Common.Interfaces;
+using MilkeKhao.Infrastructure.Dispatch;
 using MilkeKhao.Infrastructure.Notifications;
 using MilkeKhao.Infrastructure.Payments;
 using MilkeKhao.Infrastructure.Persistence;
@@ -48,6 +49,9 @@ builder.Services.AddScoped<IPaymentProvider, UpiPaymentProvider>();
 builder.Services.AddScoped<IPaymentProvider, RazorpayPaymentProvider>();
 builder.Services.AddScoped<IPaymentProvider, PayUPaymentProvider>();
 builder.Services.AddScoped<IPaymentProviderFactory, PaymentProviderFactory>();
+
+// Phase 6: Register Aggregator Dispatch Client (OCP Compliant)
+builder.Services.AddScoped<IAggregatorDispatchClient, GenericWebhookAggregatorDispatchClient>();
 
 // Phase 5: Register SignalR Hub & Notification Dispatchers
 builder.Services.AddSignalR();
