@@ -1,0 +1,15 @@
+rules:
+  - id: hardcoded-jwt-secret-check
+    patterns:
+      - pattern-regex: "(?i)(secret[_-]?key|jwt[_-]?secret)\\s*=\\s*\"[a-zA-Z0-9_-]{20,}\""
+    message: "Ensure JWT secrets are passed via environment variables in production."
+    languages: [csharp, typescript, json]
+    severity: WARNING
+
+  - id: cross-tenant-leakage-prevention
+    patterns:
+      - pattern: $DB.Orders.Where(...)
+      - pattern-not: $DB.Orders.Where(o => o.TenantId == ...)
+    message: "Potential missing tenant filter on orders query. Ensure ITenantScoped is applied."
+    languages: [csharp]
+    severity: INFO

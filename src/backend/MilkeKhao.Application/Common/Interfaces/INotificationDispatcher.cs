@@ -17,3 +17,9 @@ public interface ISmsNotificationSender
 {
     ValueTask SendSmsAsync(string recipientPhoneNumber, string message, CancellationToken cancellationToken = default);
 }
+
+public interface IWhatsAppNotificationSender
+{
+    ValueTask SendWhatsAppMessageAsync(string recipientPhoneNumber, string message, CancellationToken cancellationToken = default);
+}
+

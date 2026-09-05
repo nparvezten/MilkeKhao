@@ -10,6 +10,11 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U milkekhao_user -d milkekhaodb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
 
   # Valkey 8.0 (BSD-3-Clause open-source fork of Redis — zero commercial license restriction)
@@ -18,6 +23,11 @@ services:
     container_name: milkekhao_valkey
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
 
   backend:
@@ -27,14 +37,17 @@ services:
     container_name: milkekhao_api
     environment:
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=milkekhaodb;Username=milkekhao_user;Password=enterprise_secure_password_2026!
+      - ConnectionStrings__Redis=valkey:6379
       - Jwt__SecretKey=MilkeKhao_Super_Secret_Enterprise_JWT_Key_2026_Must_Be_At_Least_256_Bits!
       - Jwt__Issuer=MilkeKhaoAPI
       - Jwt__Audience=MilkeKhaoClients
     ports:
       - "5000:80"
     depends_on:
-      - postgres
-      - valkey
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
     restart: unless-stopped
 
   frontend:

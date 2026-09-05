@@ -41,8 +41,27 @@ builder.Services.AddDbContext<MilkeKhaoDbContext>((serviceProvider, options) =>
 
 builder.Services.AddScoped<IMilkeKhaoDbContext>(provider => provider.GetRequiredService<MilkeKhaoDbContext>());
 
+// Distributed Cache (Redis/Valkey with in-memory fallback)
+var redisConnection = builder.Configuration.GetConnectionString("Redis");
+if (!string.IsNullOrEmpty(redisConnection) && !redisConnection.Contains("localhost:6379"))
+{
+    builder.Services.AddStackExchangeRedisCache(options =>
+    {
+        options.Configuration = redisConnection;
+        options.InstanceName = "MilkeKhao_";
+    });
+}
+else
+{
+    builder.Services.AddDistributedMemoryCache();
+}
+builder.Services.AddSingleton<ICacheService, DistributedCacheService>();
+
 // Add Mediator CQRS Engine
 builder.Services.AddMediator();
+
+// Add HttpClients
+builder.Services.AddHttpClient();
 
 // Phase 4: Register Payment Providers & Factory (OCP Compliant)
 builder.Services.AddScoped<IPaymentProvider, UpiPaymentProvider>();
@@ -50,14 +69,18 @@ builder.Services.AddScoped<IPaymentProvider, RazorpayPaymentProvider>();
 builder.Services.AddScoped<IPaymentProvider, PayUPaymentProvider>();
 builder.Services.AddScoped<IPaymentProviderFactory, PaymentProviderFactory>();
 
-// Phase 6: Register Aggregator Dispatch Client (OCP Compliant)
+// Phase 4: Register Aggregator Dispatch Clients & Factory (OCP Compliant)
 builder.Services.AddScoped<IAggregatorDispatchClient, GenericWebhookAggregatorDispatchClient>();
+builder.Services.AddScoped<IAggregatorDispatchClient, DunzoAggregatorDispatchClient>();
+builder.Services.AddScoped<IAggregatorDispatchClient, ShadowfaxAggregatorDispatchClient>();
+builder.Services.AddScoped<IAggregatorDispatchClientFactory, AggregatorDispatchClientFactory>();
 
-// Phase 5: Register SignalR Hub & Notification Dispatchers
+// Phase 5: Register SignalR Hub & Multi-Channel Notification Dispatchers
 builder.Services.AddSignalR();
 builder.Services.AddScoped<INotificationDispatcher, SignalRNotificationDispatcher>();
-builder.Services.AddScoped<IEmailNotificationSender, MockEmailNotificationSender>();
-builder.Services.AddScoped<ISmsNotificationSender, MockSmsNotificationSender>();
+builder.Services.AddScoped<IEmailNotificationSender, SmtpEmailNotificationSender>();
+builder.Services.AddScoped<ISmsNotificationSender, TwilioSmsNotificationSender>();
+builder.Services.AddScoped<IWhatsAppNotificationSender, WhatsAppCloudApiNotificationSender>();
 
 // Phase 6: Register JWT Token Service & Auth Security
 builder.Services.AddSingleton<IJwtTokenService>(new JwtTokenService(
@@ -88,8 +111,8 @@ using (var scope = app.Services.CreateScope())
             Slug = "swaad-foods",
             Settings = new MilkeKhao.Domain.Entities.TenantFeatureSettings
             {
-                EnabledDeliveryModes = new List<string> { "Pickup", "InHouseDelivery" },
-                EnabledPaymentMethods = new List<string> { "UpiIntent", "UpiQr" },
+                EnabledDeliveryModes = new List<string> { "Pickup", "InHouseDelivery", "AggregatorDelivery" },
+                EnabledPaymentMethods = new List<string> { "UpiIntent", "UpiQr", "Razorpay", "PayU" },
                 MaxStaffAccounts = 1,
                 GstRegistered = true
             }
