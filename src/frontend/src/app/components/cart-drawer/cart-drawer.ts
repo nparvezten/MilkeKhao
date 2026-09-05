@@ -46,6 +46,52 @@ import { DeliveryMode, PaymentMethod, CreateOrderCommand, Address } from '../../
               }
             </div>
 
+            <!-- Coupon & Promo Code Section -->
+            <div class="section-card coupon-section">
+              <h4 class="section-title">🏷️ Offers & Promo Code</h4>
+              @if (!cartService.appliedCoupon()) {
+                <div class="coupon-input-group">
+                  <input
+                    type="text"
+                    [(ngModel)]="couponCodeInput"
+                    placeholder="Enter Coupon (e.g. FIRST50)"
+                    class="form-input coupon-input"
+                  />
+                  <button
+                    class="btn btn-secondary apply-btn"
+                    [disabled]="!couponCodeInput.trim()"
+                    (click)="applyCoupon()"
+                  >
+                    Apply
+                  </button>
+                </div>
+
+                @if (cartService.couponError()) {
+                  <span class="coupon-err">{{ cartService.couponError() }}</span>
+                }
+
+                <div class="suggested-coupons">
+                  <button class="coupon-pill" (click)="selectCoupon('FIRST50')">
+                    <strong>FIRST50</strong> (50% OFF)
+                  </button>
+                  <button class="coupon-pill" (click)="selectCoupon('FLAT100')">
+                    <strong>FLAT100</strong> (₹100 OFF)
+                  </button>
+                  <button class="coupon-pill" (click)="selectCoupon('MILKE20')">
+                    <strong>MILKE20</strong> (20% OFF)
+                  </button>
+                </div>
+              } @else {
+                <div class="applied-coupon-card">
+                  <div class="applied-info">
+                    <span class="applied-badge">✓ {{ cartService.appliedCoupon()?.code }}</span>
+                    <span class="applied-desc">{{ cartService.appliedCoupon()?.message }}</span>
+                  </div>
+                  <button class="remove-coupon-btn" (click)="cartService.removeCoupon()">Remove</button>
+                </div>
+              }
+            </div>
+
             <!-- Fulfillment Options -->
             <div class="section-card">
               <h4 class="section-title">1. Select Delivery Mode</h4>
@@ -102,15 +148,21 @@ import { DeliveryMode, PaymentMethod, CreateOrderCommand, Address } from '../../
             <div class="summary-card">
               <div class="summary-row">
                 <span>Item Subtotal</span>
-                <span>₹{{ cartService.totalAmount() }}</span>
+                <span>₹{{ cartService.subtotal().toFixed(2) }}</span>
               </div>
+              @if (cartService.discount() > 0) {
+                <div class="summary-row discount-row">
+                  <span>Discount ({{ cartService.appliedCoupon()?.code }})</span>
+                  <span>- ₹{{ cartService.discount().toFixed(2) }}</span>
+                </div>
+              }
               <div class="summary-row">
                 <span>GST (5%)</span>
-                <span>₹{{ (cartService.totalAmount() * 0.05).toFixed(2) }}</span>
+                <span>₹{{ cartService.gstAmount().toFixed(2) }}</span>
               </div>
               <div class="summary-row total-row">
                 <span>Total Amount Payable</span>
-                <span>₹{{ (cartService.totalAmount() * 1.05).toFixed(2) }}</span>
+                <span>₹{{ cartService.totalAmount().toFixed(2) }}</span>
               </div>
             </div>
           </div>
@@ -124,7 +176,7 @@ import { DeliveryMode, PaymentMethod, CreateOrderCommand, Address } from '../../
               @if (orderService.isSubmitting()) {
                 <span>Processing Payment...</span>
               } @else {
-                <span>Place Order • ₹{{ (cartService.totalAmount() * 1.05).toFixed(2) }}</span>
+                <span>Place Order • ₹{{ cartService.totalAmount().toFixed(2) }}</span>
               }
             </button>
           </div>
@@ -198,42 +250,40 @@ import { DeliveryMode, PaymentMethod, CreateOrderCommand, Address } from '../../
     .item-info {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
     }
     .item-title {
-      font-size: 0.9rem;
-      color: var(--text-primary);
+      font-size: 0.95rem;
+      margin: 0;
     }
     .item-subprice {
-      font-size: 0.75rem;
+      font-size: 0.8rem;
       color: var(--text-muted);
     }
     .quantity-controls {
       display: flex;
       align-items: center;
       gap: 8px;
-      background: var(--bg-secondary);
-      padding: 2px 8px;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 4px;
       border-radius: var(--radius-sm);
     }
     .qty-btn {
       background: transparent;
       border: none;
-      color: var(--accent-primary);
-      font-weight: 800;
-      font-size: 1rem;
+      color: var(--text-primary);
+      width: 24px;
+      height: 24px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
-      width: 20px;
+      font-size: 1rem;
     }
-    .qty-count {
-      font-size: 0.85rem;
-      font-weight: 700;
-    }
-    .item-total {
-      font-weight: 700;
-      color: var(--accent-gold);
-      font-size: 0.9rem;
-    }
+    .qty-btn:hover { background: rgba(255, 255, 255, 0.1); }
+    .qty-count { font-size: 0.85rem; font-weight: 700; width: 16px; text-align: center; }
+    .item-total { font-weight: 700; font-size: 0.95rem; color: var(--accent-gold); }
     .section-card {
       background: rgba(0, 0, 0, 0.2);
       padding: 16px;
@@ -241,30 +291,100 @@ import { DeliveryMode, PaymentMethod, CreateOrderCommand, Address } from '../../
       border: 1px solid var(--border-color);
     }
     .section-title {
-      font-size: 0.85rem;
-      color: var(--text-secondary);
+      font-size: 0.9rem;
       margin-bottom: 12px;
+      color: var(--text-secondary);
+    }
+    .coupon-input-group {
+      display: flex;
+      gap: 8px;
+    }
+    .coupon-input {
+      flex-grow: 1;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+    .apply-btn {
+      padding: 8px 16px;
+      font-size: 0.85rem;
+    }
+    .coupon-err {
+      display: block;
+      margin-top: 6px;
+      color: #e74c3c;
+      font-size: 0.75rem;
+    }
+    .suggested-coupons {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    .coupon-pill {
+      background: rgba(255, 107, 53, 0.1);
+      border: 1px dashed var(--accent-primary);
+      color: var(--text-primary);
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    .coupon-pill:hover {
+      background: rgba(255, 107, 53, 0.25);
+    }
+    .applied-coupon-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(46, 204, 113, 0.15);
+      border: 1px solid rgba(46, 204, 113, 0.4);
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+    }
+    .applied-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .applied-badge {
+      font-weight: 800;
+      color: #2ecc71;
+      font-size: 0.85rem;
+    }
+    .applied-desc {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+    .remove-coupon-btn {
+      background: transparent;
+      border: none;
+      color: #e74c3c;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
     }
     .options-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 10px;
+      gap: 8px;
     }
     .option-btn {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
       padding: 10px;
       border-radius: var(--radius-sm);
-      border: 1px solid var(--border-color);
-      background: var(--bg-secondary);
-      color: var(--text-secondary);
-      font-size: 0.8rem;
-      font-weight: 600;
+      font-size: 0.85rem;
       cursor: pointer;
       transition: all var(--transition-fast);
     }
     .option-btn.active {
-      background: rgba(255, 107, 53, 0.15);
-      color: var(--accent-primary);
+      background: rgba(255, 107, 53, 0.2);
       border-color: var(--accent-primary);
+      color: #ffffff;
+      font-weight: 700;
     }
     .address-fields {
       display: flex;
@@ -272,34 +392,37 @@ import { DeliveryMode, PaymentMethod, CreateOrderCommand, Address } from '../../
       gap: 8px;
       margin-top: 12px;
     }
-    .form-input {
-      background: rgba(0, 0, 0, 0.3);
-      border: 1px solid var(--border-color);
-      color: var(--text-primary);
-      padding: 8px 12px;
-      border-radius: var(--radius-sm);
-      font-size: 0.8rem;
-      outline: none;
-    }
     .form-row {
       display: grid;
-      grid-template-columns: 2fr 1fr;
+      grid-template-columns: 1fr 1fr;
       gap: 8px;
     }
+    .form-input {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      outline: none;
+    }
     .summary-card {
-      background: rgba(255, 107, 53, 0.05);
+      background: rgba(0, 0, 0, 0.3);
       padding: 16px;
       border-radius: var(--radius-md);
-      border: 1px solid rgba(255, 107, 53, 0.2);
       display: flex;
       flex-direction: column;
       gap: 8px;
-      font-size: 0.85rem;
     }
     .summary-row {
       display: flex;
       justify-content: space-between;
       color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+    .discount-row {
+      color: #2ecc71;
+      font-weight: 700;
     }
     .total-row {
       font-size: 1.05rem;
@@ -337,6 +460,7 @@ export class CartDrawerComponent {
   readonly selectedDeliveryMode = signal<DeliveryMode>(DeliveryMode.Pickup);
   readonly selectedPaymentMethod = signal<PaymentMethod>(PaymentMethod.UpiIntent);
 
+  couponCodeInput = '';
   street = 'B-12, Connaught Place';
   city = 'New Delhi';
   postalCode = '110001';
@@ -346,6 +470,20 @@ export class CartDrawerComponent {
     public orderService: OrderService,
     public tenantService: TenantService
   ) {}
+
+  applyCoupon(): void {
+    if (this.couponCodeInput.trim()) {
+      const success = this.cartService.applyCoupon(this.couponCodeInput);
+      if (success) {
+        this.couponCodeInput = '';
+      }
+    }
+  }
+
+  selectCoupon(code: string): void {
+    this.couponCodeInput = code;
+    this.applyCoupon();
+  }
 
   async onPlaceOrder(): Promise<void> {
     let deliveryAddress: Address | undefined = undefined;

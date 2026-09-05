@@ -1,7 +1,10 @@
-import { Component, computed } from '@angular/core';
+import { Component, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { OrderService } from '../../services/order.service';
-import { OrderStatus, DeliveryMode, PaymentMethod } from '../../models/order.model';
+import { TenantService } from '../../services/tenant.service';
+import { AudioAlertService } from '../../services/audio-alert.service';
+import { ThermalPrinterService } from '../../services/thermal-printer.service';
+import { Order, OrderStatus, DeliveryMode } from '../../models/order.model';
 
 @Component({
   selector: 'app-kitchen-kds',
@@ -14,18 +17,31 @@ import { OrderStatus, DeliveryMode, PaymentMethod } from '../../models/order.mod
           <h2>👨‍🍳 Kitchen Display System (KDS)</h2>
           <p class="kds-sub">Live kitchen workflow pipeline & status management</p>
         </div>
-        <div class="kds-stats">
-          <div class="stat-box">
-            <span class="stat-val">{{ pendingOrders().length }}</span>
-            <span class="stat-lbl">Pending</span>
-          </div>
-          <div class="stat-box">
-            <span class="stat-val">{{ preparingOrders().length }}</span>
-            <span class="stat-lbl">In Prep</span>
-          </div>
-          <div class="stat-box">
-            <span class="stat-val">{{ readyOrders().length }}</span>
-            <span class="stat-lbl">Ready</span>
+
+        <div class="kds-header-actions">
+          <!-- Audio Alert Toggle -->
+          <button
+            class="btn audio-toggle-btn"
+            [class.muted]="audioService.isMuted()"
+            (click)="audioService.toggleMute()"
+            title="Toggle Kitchen Order Chime"
+          >
+            {{ audioService.isMuted() ? '🔕 Chime Muted' : '🔔 Audio Alerts Active' }}
+          </button>
+
+          <div class="kds-stats">
+            <div class="stat-box">
+              <span class="stat-val">{{ pendingOrders().length }}</span>
+              <span class="stat-lbl">Pending</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-val">{{ preparingOrders().length }}</span>
+              <span class="stat-lbl">In Prep</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-val">{{ readyOrders().length }}</span>
+              <span class="stat-lbl">Ready</span>
+            </div>
           </div>
         </div>
       </div>
@@ -39,12 +55,15 @@ import { OrderStatus, DeliveryMode, PaymentMethod } from '../../models/order.mod
           </div>
           <div class="orders-stack">
             @for (order of pendingOrders(); track order.id) {
-              <div class="order-card">
+              <div class="order-card card-new-incoming">
                 <div class="card-top">
                   <span class="order-id">#{{ order.id }}</span>
-                  <span class="badge" [class.badge-veg]="order.deliveryMode === DeliveryMode.Pickup">
-                    {{ order.deliveryMode === DeliveryMode.Pickup ? '🛍️ Pickup' : '🛵 In-House' }}
-                  </span>
+                  <div class="card-badges">
+                    <button class="kot-btn" (click)="printKot(order)" title="Print KOT Slip">🖨️ KOT</button>
+                    <span class="badge" [class.badge-veg]="order.deliveryMode === DeliveryMode.Pickup">
+                      {{ order.deliveryMode === DeliveryMode.Pickup ? '🛍️ Pickup' : '🛵 In-House' }}
+                    </span>
+                  </div>
                 </div>
                 <div class="card-items">
                   @for (item of order.items; track item.menuItemId) {
@@ -85,7 +104,10 @@ import { OrderStatus, DeliveryMode, PaymentMethod } from '../../models/order.mod
               <div class="order-card">
                 <div class="card-top">
                   <span class="order-id">#{{ order.id }}</span>
-                  <span class="badge badge-status badge-accepted">Accepted</span>
+                  <div class="card-badges">
+                    <button class="kot-btn" (click)="printKot(order)" title="Print KOT Slip">🖨️ KOT</button>
+                    <span class="badge badge-status badge-accepted">Accepted</span>
+                  </div>
                 </div>
                 <div class="card-items">
                   @for (item of order.items; track item.menuItemId) {
@@ -121,7 +143,10 @@ import { OrderStatus, DeliveryMode, PaymentMethod } from '../../models/order.mod
               <div class="order-card card-active-prep">
                 <div class="card-top">
                   <span class="order-id">#{{ order.id }}</span>
-                  <span class="badge badge-status badge-preparing">Cooking...</span>
+                  <div class="card-badges">
+                    <button class="kot-btn" (click)="printKot(order)" title="Print KOT Slip">🖨️ KOT</button>
+                    <span class="badge badge-status badge-preparing">Cooking...</span>
+                  </div>
                 </div>
                 <div class="card-items">
                   @for (item of order.items; track item.menuItemId) {
@@ -157,7 +182,10 @@ import { OrderStatus, DeliveryMode, PaymentMethod } from '../../models/order.mod
               <div class="order-card card-ready-bg">
                 <div class="card-top">
                   <span class="order-id">#{{ order.id }}</span>
-                  <span class="badge badge-status badge-ready">Packaged</span>
+                  <div class="card-badges">
+                    <button class="kot-btn" (click)="printKot(order)" title="Print KOT Slip">🖨️ KOT</button>
+                    <span class="badge badge-status badge-ready">Packaged</span>
+                  </div>
                 </div>
                 <div class="card-items">
                   @for (item of order.items; track item.menuItemId) {
@@ -197,6 +225,27 @@ import { OrderStatus, DeliveryMode, PaymentMethod } from '../../models/order.mod
       display: flex;
       align-items: center;
       justify-content: space-between;
+    }
+    .kds-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .audio-toggle-btn {
+      background: rgba(46, 204, 113, 0.2);
+      border: 1px solid rgba(46, 204, 113, 0.4);
+      color: #2ecc71;
+      padding: 8px 16px;
+      border-radius: var(--radius-md);
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    .audio-toggle-btn.muted {
+      background: rgba(231, 76, 60, 0.2);
+      border-color: rgba(231, 76, 60, 0.4);
+      color: #e74c3c;
     }
     .kds-sub {
       color: var(--text-muted);
@@ -265,6 +314,15 @@ import { OrderStatus, DeliveryMode, PaymentMethod } from '../../models/order.mod
       gap: 12px;
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
     }
+    .card-new-incoming {
+      border-color: rgba(255, 107, 53, 0.6);
+      animation: pulse-border 2s infinite;
+    }
+    @keyframes pulse-border {
+      0% { box-shadow: 0 0 0 0 rgba(255, 107, 53, 0.4); }
+      70% { box-shadow: 0 0 0 8px rgba(255, 107, 53, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(255, 107, 53, 0); }
+    }
     .card-active-prep {
       border-color: rgba(124, 77, 255, 0.5);
       background: linear-gradient(135deg, rgba(124, 77, 255, 0.1), rgba(19, 27, 46, 0.9));
@@ -277,6 +335,24 @@ import { OrderStatus, DeliveryMode, PaymentMethod } from '../../models/order.mod
       display: flex;
       justify-content: space-between;
       align-items: center;
+    }
+    .card-badges {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .kot-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 3px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .kot-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
     }
     .order-id {
       font-weight: 800;
@@ -333,6 +409,8 @@ export class KitchenKdsComponent {
   readonly OrderStatus = OrderStatus;
   readonly DeliveryMode = DeliveryMode;
 
+  private previousPendingCount = 0;
+
   readonly pendingOrders = computed(() =>
     this.orderService.orders().filter(o => o.status === OrderStatus.Pending)
   );
@@ -349,5 +427,24 @@ export class KitchenKdsComponent {
     this.orderService.orders().filter(o => o.status === OrderStatus.ReadyForPickup)
   );
 
-  constructor(public orderService: OrderService) {}
+  constructor(
+    public orderService: OrderService,
+    public tenantService: TenantService,
+    public audioService: AudioAlertService,
+    private printerService: ThermalPrinterService
+  ) {
+    // Play chime whenever a new pending order arrives
+    effect(() => {
+      const currentPending = this.pendingOrders().length;
+      if (currentPending > this.previousPendingCount && currentPending > 0) {
+        this.audioService.playOrderChime();
+      }
+      this.previousPendingCount = currentPending;
+    });
+  }
+
+  printKot(order: Order): void {
+    const tenantName = this.tenantService.activeTenant().name;
+    this.printerService.printKotSlip(order, tenantName);
+  }
 }

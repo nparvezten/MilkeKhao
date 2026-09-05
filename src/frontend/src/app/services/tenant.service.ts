@@ -5,7 +5,6 @@ import { Tenant } from '../models/tenant.model';
   providedIn: 'root'
 })
 export class TenantService {
-  // Launch default tenant derived from Phase 0 seed data
   private readonly defaultTenant: Tenant = {
     id: '99999999-9999-9999-9999-999999999999',
     name: 'Swaad Foods (Delhi NCR)',
@@ -30,13 +29,18 @@ export class TenantService {
     }
   };
 
+  readonly availableTenants = signal<Tenant[]>([this.defaultTenant, this.secondaryTenant]);
   readonly activeTenant = signal<Tenant>(this.defaultTenant);
-  readonly availableTenants = [this.defaultTenant, this.secondaryTenant];
 
   setTenant(tenantId: string): void {
-    const found = this.availableTenants.find(t => t.id === tenantId);
+    const found = this.availableTenants().find(t => t.id === tenantId);
     if (found) {
       this.activeTenant.set(found);
     }
+  }
+
+  addTenant(newTenant: Tenant): void {
+    this.availableTenants.update(list => [...list, newTenant]);
+    this.activeTenant.set(newTenant);
   }
 }

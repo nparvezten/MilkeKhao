@@ -12,6 +12,7 @@ public interface IMilkeKhaoDbContext
     DbSet<Driver> Drivers { get; }
     DbSet<Order> Orders { get; }
     DbSet<OrderStatusHistory> OrderStatusHistories { get; }
+    DbSet<Coupon> Coupons { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

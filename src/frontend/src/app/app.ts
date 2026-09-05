@@ -6,6 +6,7 @@ import { CartDrawerComponent } from './components/cart-drawer/cart-drawer';
 import { KitchenKdsComponent } from './components/kitchen-kds/kitchen-kds';
 import { DriverDashboardComponent } from './components/driver-dashboard/driver-dashboard';
 import { OwnerDashboardComponent } from './components/owner-dashboard/owner-dashboard';
+import { OnboardingComponent } from './components/onboarding/onboarding';
 
 @Component({
   selector: 'app-root',
@@ -17,7 +18,8 @@ import { OwnerDashboardComponent } from './components/owner-dashboard/owner-dash
     CartDrawerComponent,
     KitchenKdsComponent,
     DriverDashboardComponent,
-    OwnerDashboardComponent
+    OwnerDashboardComponent,
+    OnboardingComponent
   ],
   template: `
     <div class="app-wrapper">
@@ -35,6 +37,8 @@ import { OwnerDashboardComponent } from './components/owner-dashboard/owner-dash
           <app-driver-dashboard />
         } @else if (activeView() === 'owner') {
           <app-owner-dashboard />
+        } @else if (activeView() === 'onboarding') {
+          <app-onboarding (completed)="activeView.set('storefront')" />
         }
       </main>
 
@@ -54,5 +58,5 @@ import { OwnerDashboardComponent } from './components/owner-dashboard/owner-dash
   `]
 })
 export class App {
-  readonly activeView = signal<'storefront' | 'kitchen' | 'driver' | 'owner'>('storefront');
+  readonly activeView = signal<'storefront' | 'kitchen' | 'driver' | 'owner' | 'onboarding'>('storefront');
 }

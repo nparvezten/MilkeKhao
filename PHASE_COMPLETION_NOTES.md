@@ -64,10 +64,10 @@
 - **Packaging Guide (`MOBILE_PACKAGING_GUIDE.md`)**: Documented complete setup procedures for compiling Android Debug APKs via Android Studio and iOS apps via Xcode.
 - **Official Developer Fees**: Explicitly documented Google Play ($25 one-time) and Apple App Store ($99/year) developer account registration costs.
 
-## Production Enhancements Summary (5 Next-Step Pillars Completed)
-1. **Native Mobile App Generation & Workspace**: Generated complete Capacitor `android` and `ios` native projects, wired npm helper scripts (`npm run build:mobile`, `npm run cap:android`, `npm run cap:ios`), and verified asset sync.
-2. **PostgreSQL & Redis Live Deployment**: Configured `Microsoft.Extensions.Caching.StackExchangeRedis`, built `DistributedCacheService` abstraction, updated `docker-compose.yml` with health-checked PostgreSQL 16 and Valkey 8.0 containers.
-3. **Live Gateways & SMS / WhatsApp Integration**: Added cryptographic HMAC-SHA256 signature verification to `RazorpayPaymentProvider`, SHA-512 checksum validation to `PayUPaymentProvider`, and built `SmtpEmailNotificationSender`, `TwilioSmsNotificationSender`, and `WhatsAppCloudApiNotificationSender`.
-4. **Third-Party Aggregator Delivery Client**: Built `DunzoAggregatorDispatchClient` (B2B Task API), `ShadowfaxAggregatorDispatchClient` (Flash API), and dynamic `AggregatorDispatchClientFactory`.
-5. **End-to-End & Security Testing (E2E / VAPT)**: Integrated `SecurityCodeScan.VS2019` Roslyn analyzer (0 security warnings), created `.semgrep.yml` for SAST rules, created `.github/workflows/vapt.yml` for CI SAST/DAST automation, and created Playwright E2E suite (`tests/MilkeKhao.E2E`). All 11 unit tests passing, 0 vulnerable packages.
+## Operations & Commercial Features Summary (Points 3, 4, 5 Completed)
+1. **Kitchen Audio Alerts & Thermal KOT Printing**: Built `AudioAlertService` using the browser Web Audio API (synthesized dual-tone bell chime on new incoming orders with sound toggle) and `ThermalPrinterService` generating CSS-styled 80mm/58mm Kitchen Order Tickets and ESC/POS byte buffers. Added "🖨️ KOT" print action to KDS cards.
+2. **Self-Serve Multi-Tenant Restaurant Onboarding Portal**: Created `RegisterTenantCommand` with automatic menu seeding, `TenantsController`, and `OnboardingComponent` (4-step wizard for Brand, Direct UPI payouts, Fulfillment channels, and instant live launch).
+3. **Coupon & Discount Engine**: Implemented `Coupon` domain entity, `DiscountType` enum, `ValidateCouponQuery` CQRS handler with built-in promos (`FIRST50`, `FLAT100`, `MILKE20`), `CouponsController`, and full interactive coupon input, promo chips, and discount breakdown in `CartService` and `CartDrawerComponent`.
+4. **Verification**: 14/14 xUnit backend tests passing, clean frontend mobile build in 1.05s with 0 warnings.
+
 

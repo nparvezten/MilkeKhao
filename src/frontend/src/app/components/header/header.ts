@@ -12,7 +12,7 @@ import { CartService } from '../../services/cart.service';
       <div class="header-container">
         <!-- Brand Logo & Tenant Switcher -->
         <div class="brand-section">
-          <div class="logo">
+          <div class="logo" (click)="viewChange.emit('storefront')" style="cursor: pointer;">
             <span class="logo-icon">🍲</span>
             <span class="logo-text">MilkeKhao</span>
           </div>
@@ -24,7 +24,7 @@ import { CartService } from '../../services/cart.service';
               (change)="onTenantChange($event)"
               class="tenant-select"
             >
-              @for (tenant of tenantService.availableTenants; track tenant.id) {
+              @for (tenant of tenantService.availableTenants(); track tenant.id) {
                 <option [value]="tenant.id">{{ tenant.name }}</option>
               }
             </select>
@@ -60,6 +60,13 @@ import { CartService } from '../../services/cart.service';
             (click)="viewChange.emit('owner')"
           >
             👑 Owner Analytics
+          </button>
+          <button
+            class="tab-btn onboard-tab"
+            [class.active]="activeView === 'onboarding'"
+            (click)="viewChange.emit('onboarding')"
+          >
+            ✨ Add Restaurant
           </button>
         </nav>
 
@@ -138,6 +145,9 @@ import { CartService } from '../../services/cart.service';
       color: #ffffff;
       box-shadow: 0 2px 8px rgba(255, 107, 53, 0.4);
     }
+    .onboard-tab {
+      color: var(--accent-gold);
+    }
     .cart-btn {
       display: flex;
       align-items: center;
@@ -160,8 +170,8 @@ import { CartService } from '../../services/cart.service';
   `]
 })
 export class HeaderComponent {
-  @Input() activeView: 'storefront' | 'kitchen' | 'driver' | 'owner' = 'storefront';
-  @Output() viewChange = new EventEmitter<'storefront' | 'kitchen' | 'driver' | 'owner'>();
+  @Input() activeView: 'storefront' | 'kitchen' | 'driver' | 'owner' | 'onboarding' = 'storefront';
+  @Output() viewChange = new EventEmitter<'storefront' | 'kitchen' | 'driver' | 'owner' | 'onboarding'>();
 
   constructor(
     public tenantService: TenantService,

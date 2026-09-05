@@ -18,6 +18,7 @@ public class MilkeKhaoDbContext : DbContext, IMilkeKhaoDbContext
     public DbSet<Driver> Drivers => Set<Driver>();
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderStatusHistory> OrderStatusHistories => Set<OrderStatusHistory>();
+    public DbSet<Coupon> Coupons => Set<Coupon>();
 
     public MilkeKhaoDbContext(DbContextOptions<MilkeKhaoDbContext> options, ITenantContext tenantContext)
         : base(options)
