@@ -8,16 +8,20 @@ export class AudioAlertService {
   private audioCtx: AudioContext | null = null;
 
   constructor() {
-    const saved = localStorage.getItem('milkekhao_kds_muted');
-    if (saved !== null) {
-      this.isMuted.set(saved === 'true');
+    if (typeof localStorage !== 'undefined') {
+      const saved = localStorage.getItem('milkekhao_kds_muted');
+      if (saved !== null) {
+        this.isMuted.set(saved === 'true');
+      }
     }
   }
 
   toggleMute(): void {
     const newVal = !this.isMuted();
     this.isMuted.set(newVal);
-    localStorage.setItem('milkekhao_kds_muted', String(newVal));
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('milkekhao_kds_muted', String(newVal));
+    }
   }
 
   /**
@@ -28,7 +32,10 @@ export class AudioAlertService {
     if (this.isMuted()) return;
 
     try {
+      if (typeof window === 'undefined') return;
       const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (!AudioContextClass) return;
+
       if (!this.audioCtx) {
         this.audioCtx = new AudioContextClass();
       }

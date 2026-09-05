@@ -76,6 +76,21 @@ export class OrderService {
         currency: 'INR',
         isPaid: true,
         createdAt: new Date(Date.now() - 1000 * 60 * 28).toISOString() // 28 mins ago
+      },
+      {
+        id: 'ord-104',
+        tenantId,
+        customerId: 'cust-504',
+        status: OrderStatus.ReadyForPickup,
+        deliveryMode: DeliveryMode.Pickup,
+        paymentMethod: PaymentMethod.UpiIntent,
+        items: [
+          { menuItemId: 'm-7', menuItemName: 'Murg Dum Biryani', unitPrice: 350, quantity: 1, subTotal: 350 }
+        ],
+        totalAmount: 350,
+        currency: 'INR',
+        isPaid: true,
+        createdAt: new Date(Date.now() - 1000 * 60 * 35).toISOString() // 35 mins ago
       }
     ];
 
