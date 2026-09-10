@@ -497,7 +497,7 @@ export class CartDrawerComponent {
     }
 
     const command: CreateOrderCommand = {
-      customerId: 'cust-user-1',
+      customerId: '00000000-0000-0000-0000-000000000001',
       deliveryMode: this.selectedDeliveryMode(),
       paymentMethod: this.selectedPaymentMethod(),
       deliveryAddress,

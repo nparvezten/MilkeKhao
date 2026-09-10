@@ -1,7 +1,8 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, computed, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MenuItem } from '../../models/menu.model';
 import { CartService } from '../../services/cart.service';
+import { MenuService } from '../../services/menu.service';
 
 @Component({
   selector: 'app-storefront',
@@ -78,7 +79,7 @@ import { CartService } from '../../services/cart.service';
                 <span class="category-tag">{{ item.category }}</span>
                 <button
                   class="btn btn-primary add-btn"
-                  (click)="cartService.addItem(item)"
+                  (click)="onAddToCart(item)"
                 >
                   + Add to Cart
                 </button>
@@ -278,103 +279,13 @@ export class StorefrontComponent {
   readonly onlyVeg = signal<boolean>(false);
   readonly searchQuery = signal<string>('');
 
-  private readonly rawMenuItems: MenuItem[] = [
-    {
-      id: 'm-1',
-      name: 'Special Butter Chicken',
-      description: 'Tender tandoori chicken simmered in rich tomato, butter & cashew gravy.',
-      category: 'Main Course',
-      price: 380,
-      currency: 'INR',
-      isVeg: false,
-      isAvailable: true,
-      imageUrl: 'https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=500&auto=format&fit=crop'
-    },
-    {
-      id: 'm-2',
-      name: 'Paneer Butter Masala',
-      description: 'Cottage cheese cubes tossed in creamy spiced onion-tomato velvet gravy.',
-      category: 'Main Course',
-      price: 320,
-      currency: 'INR',
-      isVeg: true,
-      isAvailable: true,
-      imageUrl: 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=500&auto=format&fit=crop'
-    },
-    {
-      id: 'm-3',
-      name: 'Amritsari Paneer Tikka',
-      description: 'Charcoal grilled cottage cheese marinated in hung curd & secret spices.',
-      category: 'Starters',
-      price: 290,
-      currency: 'INR',
-      isVeg: true,
-      isAvailable: true,
-      imageUrl: 'https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?w=500&auto=format&fit=crop'
-    },
-    {
-      id: 'm-4',
-      name: 'Hyderabadi Chicken Dum Biryani',
-      description: 'Long grain Basmati rice layered with spiced marinated chicken & saffron.',
-      category: 'Main Course',
-      price: 340,
-      currency: 'INR',
-      isVeg: false,
-      isAvailable: true,
-      imageUrl: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=500&auto=format&fit=crop'
-    },
-    {
-      id: 'm-5',
-      name: 'Dal Makhani Gold',
-      description: 'Overnight slow cooked black lentils infused with white butter & cream.',
-      category: 'Main Course',
-      price: 280,
-      currency: 'INR',
-      isVeg: true,
-      isAvailable: true,
-      imageUrl: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=500&auto=format&fit=crop'
-    },
-    {
-      id: 'm-6',
-      name: 'Butter Garlic Naan',
-      description: 'Leavened flatbread freshly baked in tandoor with fresh garlic & melted butter.',
-      category: 'Breads & Rice',
-      price: 65,
-      currency: 'INR',
-      isVeg: true,
-      isAvailable: true,
-      imageUrl: 'https://images.unsplash.com/photo-1626074353765-517a681e40be?w=500&auto=format&fit=crop'
-    },
-    {
-      id: 'm-7',
-      name: 'Gulab Jamun with Rabri',
-      description: 'Hot milk-solid dumplings soaked in cardamom rose syrup served with rabri.',
-      category: 'Desserts',
-      price: 150,
-      currency: 'INR',
-      isVeg: true,
-      isAvailable: true,
-      imageUrl: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=500&auto=format&fit=crop'
-    },
-    {
-      id: 'm-8',
-      name: 'Kesari Mango Lassi',
-      description: 'Chilled thick yogurt smoothie blended with Alphonso mango pulp & saffron.',
-      category: 'Beverages',
-      price: 120,
-      currency: 'INR',
-      isVeg: true,
-      isAvailable: true,
-      imageUrl: 'https://images.unsplash.com/photo-1553530666-ba11a7da3888?w=500&auto=format&fit=crop'
-    }
-  ];
-
   readonly filteredMenuItems = computed(() => {
     const category = this.selectedCategory();
     const vegOnly = this.onlyVeg();
     const query = this.searchQuery().toLowerCase().trim();
+    const items = this.menuService.menuItems();
 
-    return this.rawMenuItems.filter(item => {
+    return items.filter(item => {
       const matchCategory = category === 'All' || item.category === category;
       const matchVeg = !vegOnly || item.isVeg;
       const matchQuery = !query || item.name.toLowerCase().includes(query) || item.description.toLowerCase().includes(query);
@@ -382,12 +293,19 @@ export class StorefrontComponent {
     });
   });
 
-  constructor(public cartService: CartService) {}
+  constructor(
+    public cartService: CartService,
+    public menuService: MenuService
+  ) {}
 
   onSearchInput(event: Event): void {
     const target = event.target as HTMLInputElement;
     if (target) {
       this.searchQuery.set(target.value);
     }
+  }
+
+  onAddToCart(item: MenuItem): void {
+    this.cartService.addItem(item);
   }
 }

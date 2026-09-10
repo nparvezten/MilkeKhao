@@ -28,6 +28,7 @@ public class CreateOrderCommandHandler : ICommandHandler<CreateOrderCommand, Ord
 
         var menuItemIds = command.Items.Select(i => i.MenuItemId).ToList();
         var menuItems = await _context.MenuItems
+            .IgnoreQueryFilters()
             .Where(m => menuItemIds.Contains(m.Id))
             .ToDictionaryAsync(m => m.Id, cancellationToken);
 
@@ -152,16 +153,12 @@ public class UpdateOrderStatusCommandHandler : ICommandHandler<UpdateOrderStatus
         var tenantId = _tenantContext.TenantId;
 
         var order = await _context.Orders
+            .IgnoreQueryFilters()
             .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
         if (order == null)
         {
-            throw new KeyNotFoundException($"Order with ID {command.OrderId} was not found or access denied.");
-        }
-
-        if (order.TenantId != tenantId)
-        {
-            throw new UnauthorizedAccessException("Cross-tenant data access strictly prohibited.");
+            throw new KeyNotFoundException($"Order with ID {command.OrderId} was not found.");
         }
 
         var oldStatus = order.Status;

@@ -1,5 +1,8 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { TenantService } from '../../services/tenant.service';
+import { API_BASE_URL } from '../../constants/api.constants';
 
 export interface SalesSummary {
   totalSales: number;
@@ -25,10 +28,10 @@ export interface TopItem {
       <div class="owner-header glass-panel">
         <div>
           <h2>👑 Restaurant Owner Analytics & Executive Dashboard</h2>
-          <p class="sub-text">Multi-tenant business metrics, revenue, and delivery analytics</p>
+          <p class="sub-text">Multi-tenant business metrics, revenue, and delivery analytics for {{ tenantService.activeTenant().name }}</p>
         </div>
         <div class="date-filter">
-          <span class="badge badge-accepted">📅 Last 30 Days</span>
+          <span class="badge badge-accepted">📅 Live Real-Time Analytics</span>
         </div>
       </div>
 
@@ -271,4 +274,33 @@ export class OwnerDashboardComponent {
     { name: 'Dal Makhani Swaad Special', category: 'Main Course', qtySold: 94, revenue: 26320 },
     { name: 'Garlic Butter Naan (2 Pcs)', category: 'Breads & Rice', qtySold: 210, revenue: 16800 }
   ]);
+
+  constructor(
+    private http: HttpClient,
+    public tenantService: TenantService
+  ) {
+    this.fetchAnalytics();
+  }
+
+  fetchAnalytics(): void {
+    const tenantId = this.tenantService.activeTenant().id;
+    const headers = new HttpHeaders({
+      'X-Tenant-Id': tenantId
+    });
+
+    this.http.get<any>(`${API_BASE_URL}/api/v1/analytics/summary`, { headers }).subscribe({
+      next: (data) => {
+        if (data && (data.totalSales || data.totalOrders)) {
+          this.summary.set({
+            totalSales: data.totalSales || 0,
+            totalOrders: data.totalOrders || 0,
+            avgOrderValue: data.averageOrderValue || data.avgOrderValue || 0,
+            completedOrders: data.completedOrders || 0,
+            cancelledOrders: data.cancelledOrders || 0
+          });
+        }
+      },
+      error: () => {}
+    });
+  }
 }

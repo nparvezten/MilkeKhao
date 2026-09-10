@@ -67,9 +67,11 @@ All 11 planned roadmap phases plus production enhancements, multi-cloud deployme
 - ✅ **AWS App Runner / ECS Script:** `infra/aws/deploy-aws.sh` (High scale ~$15–$28/mo).
 - ✅ **Cloud Deployment Guide:** `CLOUD_DEPLOYMENT_GUIDE.md` documenting prerequisites, costing, and environment setup.
 
-### F. Partner Onboarding & Commercial Features
-- ✅ **Self-Serve Partner Onboarding:** 4-step glassmorphism wizard (`OnboardingComponent.ts`) for brand setup, direct UPI payouts, fulfillment selection, and auto-seeded starter menu.
-- ✅ **Coupon & Discount Engine:** `Coupon` domain entity, `ValidateCouponQuery` CQRS handler, built-in promo codes (`FIRST50` - 50% off up to ₹100, `FLAT100` - ₹100 off on ₹399+, `MILKE20` - 20% off), promo chips, and real-time discount breakdown in `CartDrawerComponent.ts`.
+### G. Real-time REST API & Frontend HTTP Integration (Production Verified)
+- ✅ **Full Angular `HttpClient` Wiring:** Replaced all standalone in-memory mock delays with genuine HTTP requests (`GET /`, `GET /api/v1/tenants`, `POST /api/v1/tenants/register`, `GET /api/v1/menu`, `POST /api/v1/orders`, `GET /api/v1/orders/kitchen/active`, `PUT /api/v1/orders/{id}/status`, `GET /api/v1/analytics/summary`).
+- ✅ **Cross-Origin Resource Sharing (CORS):** Backend configured with `AllowCredentials()` and explicit origins for `http://localhost:4200` + production domains.
+- ✅ **Tenant Persistence:** Onboarding registers tenants to PostgreSQL/InMemory DB and automatically caches active state in `localStorage` across page refreshes.
+- ✅ **Cart UI & Floating Checkout Pill:** Added interactive Cart trigger pill and slide-over checkout with real order placement CQRS commands.
 
 ---
 

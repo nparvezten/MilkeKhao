@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
 import { OnboardingComponent } from './onboarding';
 import { TenantService } from '../../services/tenant.service';
 
@@ -6,7 +7,10 @@ describe('OnboardingComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [OnboardingComponent],
-      providers: [TenantService]
+      providers: [
+        TenantService,
+        provideHttpClient()
+      ]
     }).compileComponents();
   });
 
@@ -41,7 +45,7 @@ describe('OnboardingComponent', () => {
     expect(component.isCurrentStepValid()).toBe(true);
   });
 
-  it('should register new restaurant on completion', () => {
+  it('should register new restaurant on completion', async () => {
     const fixture = TestBed.createComponent(OnboardingComponent);
     const component = fixture.componentInstance;
     const tenantService = TestBed.inject(TenantService);
@@ -50,11 +54,10 @@ describe('OnboardingComponent', () => {
     component.restaurantSlug = 'zaika-darbar';
     component.upiVpa = 'zaika@upi';
 
-    const countBefore = tenantService.availableTenants().length;
-    component.onCompleteRegistration();
+    await component.onCompleteRegistration();
 
     expect(component.currentStep()).toBe(4);
-    expect(tenantService.availableTenants().length).toBe(countBefore + 1);
+    expect(tenantService.availableTenants().some(t => t.slug === 'zaika-darbar')).toBe(true);
     expect(tenantService.activeTenant().slug).toBe('zaika-darbar');
   });
 });

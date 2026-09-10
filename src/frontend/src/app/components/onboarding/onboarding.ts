@@ -491,7 +491,7 @@ export class OnboardingComponent {
     return modes.join(', ') || 'Pickup';
   }
 
-  onCompleteRegistration(): void {
+  async onCompleteRegistration(): Promise<void> {
     const deliveryModes: string[] = [];
     if (this.enablePickup) deliveryModes.push('Pickup');
     if (this.enableInHouse) deliveryModes.push('InHouseDelivery');
@@ -501,19 +501,15 @@ export class OnboardingComponent {
     if (this.enableRazorpay) paymentMethods.push('Razorpay');
     if (this.enablePayU) paymentMethods.push('PayU');
 
-    const newTenant: Tenant = {
-      id: crypto.randomUUID ? crypto.randomUUID() : `tenant-${Date.now()}`,
+    await this.tenantService.registerTenant({
       name: `${this.restaurantName} (${this.cityRegion})`,
       slug: this.restaurantSlug,
-      settings: {
-        enabledDeliveryModes: deliveryModes,
-        enabledPaymentMethods: paymentMethods,
-        maxStaffAccounts: 1,
-        gstRegistered: this.isGstRegistered
-      }
-    };
+      vpa: this.upiVpa,
+      enabledDeliveryModes: deliveryModes,
+      enabledPaymentMethods: paymentMethods,
+      gstRegistered: this.isGstRegistered
+    });
 
-    this.tenantService.addTenant(newTenant);
     this.currentStep.set(4);
   }
 
