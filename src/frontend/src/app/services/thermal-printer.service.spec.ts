@@ -49,4 +49,18 @@ describe('ThermalPrinterService', () => {
     expect(buffer[len - 2]).toBe(0x41); // 'A'
     expect(buffer[len - 1]).toBe(0x00); // 0
   });
+
+  it('should toggle auto-print state accurately', () => {
+    expect(service.autoPrintEnabled()).toBe(false);
+    service.toggleAutoPrint();
+    expect(service.autoPrintEnabled()).toBe(true);
+    service.toggleAutoPrint();
+    expect(service.autoPrintEnabled()).toBe(false);
+  });
+
+  it('should initialize with disconnected Bluetooth and USB hardware states', () => {
+    expect(service.isBluetoothConnected()).toBe(false);
+    expect(service.isUsbConnected()).toBe(false);
+    expect(service.connectedDeviceName()).toBeNull();
+  });
 });

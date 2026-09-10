@@ -1,5 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { DriverLocationService } from '../../services/driver-location.service';
 
 export interface AssignedDelivery {
   id: string;
@@ -19,10 +20,41 @@ export interface AssignedDelivery {
       <div class="driver-header glass-panel">
         <div>
           <h2>🛵 Driver Delivery Dispatch</h2>
-          <p class="sub-text">In-House express order fulfillment manager</p>
+          <p class="sub-text">In-House express order fulfillment & live GPS telemetry manager</p>
         </div>
         <div class="driver-badge">
-          <span>Active Driver: Ramesh Kumar</span>
+          <span>Active Driver: Ramesh Kumar (ID: #DRV-802)</span>
+        </div>
+      </div>
+
+      <!-- Live GPS Telemetry Toolbar -->
+      <div class="gps-telemetry-bar glass-panel">
+        <div class="gps-info">
+          <span class="gps-pulse" [class.active]="locationService.isBroadcasting()"></span>
+          <div>
+            <strong>GPS Live Location Streaming</strong>
+            <div class="gps-status-text">
+              @if (locationService.isBroadcasting()) {
+                <span class="text-success">
+                  🟢 Broadcasting (Speed: {{ locationService.speedKmph() }} km/h | Lat: {{ locationService.currentDriverPosition().latitude | number:'1.4-4' }}, Lng: {{ locationService.currentDriverPosition().longitude | number:'1.4-4' }})
+                </span>
+              } @else {
+                <span class="text-muted">⚪ Inactive — Start broadcasting when out for delivery</span>
+              }
+            </div>
+          </div>
+        </div>
+
+        <div>
+          @if (!locationService.isBroadcasting()) {
+            <button class="btn btn-primary btn-sm" (click)="locationService.startLiveGpsBroadcasting()">
+              📡 Start Live GPS Broadcast
+            </button>
+          } @else {
+            <button class="btn btn-secondary btn-sm" (click)="locationService.stopBroadcasting()">
+              ⏹️ Stop GPS Broadcast
+            </button>
+          }
         </div>
       </div>
 
@@ -50,7 +82,7 @@ export interface AssignedDelivery {
             <div class="card-actions">
               @if (item.status === 'Assigned') {
                 <button class="btn btn-primary action-btn" (click)="updateStatus(item.id, 'PickedUp')">
-                  📦 Mark Picked Up
+                  📦 Mark Picked Up & Start Delivery
                 </button>
               } @else if (item.status === 'PickedUp') {
                 <button class="btn btn-secondary action-btn" (click)="updateStatus(item.id, 'Delivered')">
@@ -81,10 +113,48 @@ export interface AssignedDelivery {
     .driver-header {
       padding: 20px 32px;
       border-radius: var(--radius-lg);
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .gps-telemetry-bar {
+      padding: 16px 24px;
+      border-radius: var(--radius-md);
       margin-bottom: 24px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      border: 1px solid rgba(0, 230, 118, 0.2);
+    }
+    .gps-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .gps-pulse {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #757575;
+    }
+    .gps-pulse.active {
+      background: #00e676;
+      box-shadow: 0 0 10px #00e676;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.9); opacity: 0.7; }
+      50% { transform: scale(1.3); opacity: 1; }
+      100% { transform: scale(0.9); opacity: 0.7; }
+    }
+    .gps-status-text {
+      font-size: 0.8rem;
+      margin-top: 2px;
+    }
+    .text-success {
+      color: #00e676;
+      font-weight: 600;
     }
     .sub-text {
       color: var(--text-muted);
@@ -180,9 +250,17 @@ export class DriverDashboardComponent {
     }
   ]);
 
+  constructor(public locationService: DriverLocationService) {}
+
   updateStatus(id: string, newStatus: 'Assigned' | 'PickedUp' | 'Delivered'): void {
     this.deliveries.update(items =>
       items.map(item => (item.id === id ? { ...item, status: newStatus } : item))
     );
+
+    if (newStatus === 'PickedUp') {
+      this.locationService.startLiveGpsBroadcasting();
+    } else if (newStatus === 'Delivered') {
+      this.locationService.stopBroadcasting();
+    }
   }
 }

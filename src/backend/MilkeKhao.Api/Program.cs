@@ -29,7 +29,7 @@ builder.Services.AddScoped<ITenantContext, TenantContext>();
 builder.Services.AddDbContext<MilkeKhaoDbContext>((serviceProvider, options) =>
 {
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-    if (!string.IsNullOrEmpty(connectionString) && connectionString.Contains("Host="))
+    if (!string.IsNullOrEmpty(connectionString) && connectionString.StartsWith("Host=", StringComparison.OrdinalIgnoreCase))
     {
         options.UseNpgsql(connectionString);
     }
@@ -57,8 +57,11 @@ else
 }
 builder.Services.AddSingleton<ICacheService, DistributedCacheService>();
 
-// Add Mediator CQRS Engine
-builder.Services.AddMediator();
+// Add Mediator CQRS Engine (Scoped handlers to consume Scoped DbContext)
+builder.Services.AddMediator(options =>
+{
+    options.ServiceLifetime = ServiceLifetime.Scoped;
+});
 
 // Add HttpClients
 builder.Services.AddHttpClient();

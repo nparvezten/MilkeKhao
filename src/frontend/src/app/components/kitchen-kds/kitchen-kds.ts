@@ -12,10 +12,11 @@ import { Order, OrderStatus, DeliveryMode } from '../../models/order.model';
   imports: [CommonModule],
   template: `
     <div class="kds-container animate-fade-in">
+      <!-- Main Header -->
       <div class="kds-header glass-panel">
         <div>
           <h2>👨‍🍳 Kitchen Display System (KDS)</h2>
-          <p class="kds-sub">Live kitchen workflow pipeline & status management</p>
+          <p class="kds-sub">Live kitchen workflow pipeline & hardware dispatch management</p>
         </div>
 
         <div class="kds-header-actions">
@@ -46,6 +47,62 @@ import { Order, OrderStatus, DeliveryMode } from '../../models/order.model';
         </div>
       </div>
 
+      <!-- Hardware & Thermal Printer Control Strip -->
+      <div class="hardware-strip glass-panel">
+        <div class="hardware-title">
+          <span class="hardware-icon">🖨️</span>
+          <div>
+            <strong>Hardware POS Printers</strong>
+            <span class="hardware-status">
+              @if (printerService.isBluetoothConnected()) {
+                <span class="badge badge-accepted">🔵 BLE Connected: {{ printerService.connectedDeviceName() }}</span>
+              } @else if (printerService.isUsbConnected()) {
+                <span class="badge badge-accepted">🔌 USB Connected: {{ printerService.connectedDeviceName() }}</span>
+              } @else {
+                <span class="badge badge-pending">Offline (Browser Popup Fallback Active)</span>
+              }
+            </span>
+          </div>
+        </div>
+
+        <div class="hardware-controls">
+          @if (!printerService.isBluetoothConnected()) {
+            <button class="btn btn-secondary btn-sm" (click)="printerService.connectBluetooth()" title="Connect Bluetooth POS Printer">
+              🔵 Connect Bluetooth
+            </button>
+          } @else {
+            <button class="btn btn-secondary btn-sm" (click)="printerService.disconnectBluetooth()">
+              Disconnect BLE
+            </button>
+          }
+
+          @if (!printerService.isUsbConnected()) {
+            <button class="btn btn-secondary btn-sm" (click)="printerService.connectUsb()" title="Connect USB POS Printer">
+              🔌 Connect USB
+            </button>
+          } @else {
+            <button class="btn btn-secondary btn-sm" (click)="printerService.disconnectUsb()">
+              Disconnect USB
+            </button>
+          }
+
+          <button
+            class="btn btn-sm auto-print-toggle"
+            [class.active]="printerService.autoPrintEnabled()"
+            (click)="printerService.toggleAutoPrint()"
+            title="Auto-print KOT ticket upon new order arrival"
+          >
+            ⚡ Auto-Print KOT: {{ printerService.autoPrintEnabled() ? 'ON' : 'OFF' }}
+          </button>
+        </div>
+      </div>
+
+      @if (printerService.lastError()) {
+        <div class="printer-alert-bar">
+          ⚠️ {{ printerService.lastError() }}
+        </div>
+      }
+
       <div class="kds-board">
         <!-- Column 1: Pending Orders -->
         <div class="kds-column glass-panel">
@@ -59,7 +116,8 @@ import { Order, OrderStatus, DeliveryMode } from '../../models/order.model';
                 <div class="card-top">
                   <span class="order-id">#{{ order.id }}</span>
                   <div class="card-badges">
-                    <button class="kot-btn" (click)="printKot(order)" title="Print KOT Slip">🖨️ KOT</button>
+                    <button class="kot-btn" (click)="printDirect(order)" title="Direct ESC/POS Print">🖨️ Print KOT</button>
+                    <button class="kot-btn-sub" (click)="printPopup(order)" title="Popup Preview">📄</button>
                     <span class="badge" [class.badge-veg]="order.deliveryMode === DeliveryMode.Pickup">
                       {{ order.deliveryMode === DeliveryMode.Pickup ? '🛍️ Pickup' : '🛵 In-House' }}
                     </span>
@@ -105,7 +163,7 @@ import { Order, OrderStatus, DeliveryMode } from '../../models/order.model';
                 <div class="card-top">
                   <span class="order-id">#{{ order.id }}</span>
                   <div class="card-badges">
-                    <button class="kot-btn" (click)="printKot(order)" title="Print KOT Slip">🖨️ KOT</button>
+                    <button class="kot-btn" (click)="printDirect(order)" title="Direct ESC/POS Print">🖨️ Print KOT</button>
                     <span class="badge badge-status badge-accepted">Accepted</span>
                   </div>
                 </div>
@@ -144,7 +202,7 @@ import { Order, OrderStatus, DeliveryMode } from '../../models/order.model';
                 <div class="card-top">
                   <span class="order-id">#{{ order.id }}</span>
                   <div class="card-badges">
-                    <button class="kot-btn" (click)="printKot(order)" title="Print KOT Slip">🖨️ KOT</button>
+                    <button class="kot-btn" (click)="printDirect(order)" title="Direct ESC/POS Print">🖨️ Print KOT</button>
                     <span class="badge badge-status badge-preparing">Cooking...</span>
                   </div>
                 </div>
@@ -183,7 +241,7 @@ import { Order, OrderStatus, DeliveryMode } from '../../models/order.model';
                 <div class="card-top">
                   <span class="order-id">#{{ order.id }}</span>
                   <div class="card-badges">
-                    <button class="kot-btn" (click)="printKot(order)" title="Print KOT Slip">🖨️ KOT</button>
+                    <button class="kot-btn" (click)="printDirect(order)" title="Direct ESC/POS Print">🖨️ Print KOT</button>
                     <span class="badge badge-status badge-ready">Packaged</span>
                   </div>
                 </div>
@@ -221,7 +279,7 @@ import { Order, OrderStatus, DeliveryMode } from '../../models/order.model';
     .kds-header {
       padding: 20px 32px;
       border-radius: var(--radius-lg);
-      margin-bottom: 24px;
+      margin-bottom: 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -230,6 +288,52 @@ import { Order, OrderStatus, DeliveryMode } from '../../models/order.model';
       display: flex;
       align-items: center;
       gap: 20px;
+    }
+    .hardware-strip {
+      padding: 12px 24px;
+      border-radius: var(--radius-md);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid rgba(255, 107, 53, 0.2);
+    }
+    .hardware-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .hardware-icon {
+      font-size: 1.5rem;
+    }
+    .hardware-status {
+      display: inline-block;
+      margin-left: 8px;
+    }
+    .hardware-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .auto-print-toggle {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+    }
+    .auto-print-toggle.active {
+      background: rgba(0, 230, 118, 0.2);
+      border-color: var(--accent-secondary);
+      color: var(--accent-secondary);
+      font-weight: 800;
+    }
+    .printer-alert-bar {
+      background: rgba(231, 76, 60, 0.15);
+      border: 1px solid rgba(231, 76, 60, 0.4);
+      color: #ff6b6b;
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 16px;
+      font-size: 0.85rem;
     }
     .audio-toggle-btn {
       background: rgba(46, 204, 113, 0.2);
@@ -342,9 +446,9 @@ import { Order, OrderStatus, DeliveryMode } from '../../models/order.model';
       gap: 6px;
     }
     .kot-btn {
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid var(--border-color);
-      color: var(--text-primary);
+      background: rgba(255, 107, 53, 0.2);
+      border: 1px solid var(--accent-primary);
+      color: var(--accent-primary);
       padding: 3px 8px;
       border-radius: var(--radius-sm);
       font-size: 0.75rem;
@@ -352,7 +456,17 @@ import { Order, OrderStatus, DeliveryMode } from '../../models/order.model';
       font-weight: 700;
     }
     .kot-btn:hover {
-      background: rgba(255, 255, 255, 0.2);
+      background: var(--accent-primary);
+      color: #fff;
+    }
+    .kot-btn-sub {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 3px 6px;
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      cursor: pointer;
     }
     .order-id {
       font-weight: 800;
@@ -431,19 +545,30 @@ export class KitchenKdsComponent {
     public orderService: OrderService,
     public tenantService: TenantService,
     public audioService: AudioAlertService,
-    private printerService: ThermalPrinterService
+    public printerService: ThermalPrinterService
   ) {
-    // Play chime whenever a new pending order arrives
+    // Play chime and auto-print (if enabled) whenever a new pending order arrives
     effect(() => {
-      const currentPending = this.pendingOrders().length;
-      if (currentPending > this.previousPendingCount && currentPending > 0) {
+      const pending = this.pendingOrders();
+      const currentPendingCount = pending.length;
+      if (currentPendingCount > this.previousPendingCount && currentPendingCount > 0) {
         this.audioService.playOrderChime();
+
+        if (this.printerService.autoPrintEnabled()) {
+          const latestOrder = pending[0];
+          this.printDirect(latestOrder);
+        }
       }
-      this.previousPendingCount = currentPending;
+      this.previousPendingCount = currentPendingCount;
     });
   }
 
-  printKot(order: Order): void {
+  printDirect(order: Order): void {
+    const tenantName = this.tenantService.activeTenant().name;
+    this.printerService.printDirectly(order, tenantName);
+  }
+
+  printPopup(order: Order): void {
     const tenantName = this.tenantService.activeTenant().name;
     this.printerService.printKotSlip(order, tenantName);
   }

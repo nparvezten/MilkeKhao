@@ -1,10 +1,210 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { Order, DeliveryMode } from '../models/order.model';
+
+// Standard POS Thermal Printer BLE Service & Characteristic UUIDs
+const BLE_PRINTER_SERVICES = [
+  '000018f0-0000-1000-8000-00805f9b34fb', // Standard POS BLE Service
+  'e7810a06-736b-4dc3-a15e-3809009773ea', // Sunmi & Portable POS BLE Service
+  '49535343-fe7d-4ae5-8fa9-9fafd205e455'  // ISSC Transmit Service
+];
+
+const BLE_WRITE_CHARACTERISTICS = [
+  '00002af1-0000-1000-8000-00805f9b34fb',
+  'bef8d6c9-9c21-4c9e-b632-bd58c1009f9f',
+  '49535343-8841-43f4-a8d4-ecbe34729bb3'
+];
 
 @Injectable({
   providedIn: 'root'
 })
 export class ThermalPrinterService {
+  // Device connection state signals
+  readonly isBluetoothConnected = signal<boolean>(false);
+  readonly isUsbConnected = signal<boolean>(false);
+  readonly connectedDeviceName = signal<string | null>(null);
+  readonly autoPrintEnabled = signal<boolean>(false);
+  readonly isPrinting = signal<boolean>(false);
+  readonly lastError = signal<string | null>(null);
+
+  private bluetoothDevice: any = null;
+  private bluetoothCharacteristic: any = null;
+  private usbDevice: any = null;
+  private usbEndpointNumber: number = 1;
+
+  constructor() {}
+
+  /**
+   * Connect to a Bluetooth ESC/POS Thermal Printer via Web Bluetooth API.
+   */
+  async connectBluetooth(): Promise<boolean> {
+    this.lastError.set(null);
+    if (!('bluetooth' in navigator)) {
+      this.lastError.set('Web Bluetooth is not supported in this browser. Use Chrome/Edge over HTTPS.');
+      return false;
+    }
+
+    try {
+      const nav = navigator as any;
+      const device = await nav.bluetooth.requestDevice({
+        acceptAllDevices: true,
+        optionalServices: BLE_PRINTER_SERVICES
+      });
+
+      if (!device) return false;
+
+      this.bluetoothDevice = device;
+      const server = await device.gatt.connect();
+
+      // Search for known thermal printer service
+      let targetCharacteristic = null;
+      for (const serviceUuid of BLE_PRINTER_SERVICES) {
+        try {
+          const service = await server.getPrimaryService(serviceUuid);
+          for (const charUuid of BLE_WRITE_CHARACTERISTICS) {
+            try {
+              const char = await service.getCharacteristic(charUuid);
+              if (char) {
+                targetCharacteristic = char;
+                break;
+              }
+            } catch {
+              continue;
+            }
+          }
+          if (targetCharacteristic) break;
+        } catch {
+          continue;
+        }
+      }
+
+      this.bluetoothCharacteristic = targetCharacteristic;
+      this.connectedDeviceName.set(device.name || 'Bluetooth Thermal Printer');
+      this.isBluetoothConnected.set(true);
+
+      device.addEventListener('gattserverdisconnected', () => {
+        this.isBluetoothConnected.set(false);
+        this.connectedDeviceName.set(null);
+        this.bluetoothCharacteristic = null;
+      });
+
+      return true;
+    } catch (err: any) {
+      if (err.name !== 'NotFoundError') {
+        this.lastError.set(`Bluetooth connection error: ${err.message}`);
+      }
+      return false;
+    }
+  }
+
+  /**
+   * Disconnect from Bluetooth Printer.
+   */
+  disconnectBluetooth(): void {
+    if (this.bluetoothDevice && this.bluetoothDevice.gatt.connected) {
+      this.bluetoothDevice.gatt.disconnect();
+    }
+    this.isBluetoothConnected.set(false);
+    this.connectedDeviceName.set(null);
+    this.bluetoothCharacteristic = null;
+  }
+
+  /**
+   * Connect to a USB Thermal Printer via WebUSB API (Class 7 = Printer).
+   */
+  async connectUsb(): Promise<boolean> {
+    this.lastError.set(null);
+    if (!('usb' in navigator)) {
+      this.lastError.set('WebUSB is not supported in this browser. Use Chrome/Edge over HTTPS.');
+      return false;
+    }
+
+    try {
+      const nav = navigator as any;
+      const device = await nav.usb.requestDevice({
+        filters: [{ classCode: 7 }] // USB Printer Class
+      });
+
+      if (!device) return false;
+
+      await device.open();
+      await device.selectConfiguration(1);
+      await device.claimInterface(0);
+
+      this.usbDevice = device;
+      this.connectedDeviceName.set(device.productName || 'USB Thermal Printer');
+      this.isUsbConnected.set(true);
+      return true;
+    } catch (err: any) {
+      if (err.name !== 'NotFoundError') {
+        this.lastError.set(`USB connection error: ${err.message}`);
+      }
+      return false;
+    }
+  }
+
+  /**
+   * Disconnect from USB Printer.
+   */
+  async disconnectUsb(): Promise<void> {
+    if (this.usbDevice) {
+      try {
+        await this.usbDevice.close();
+      } catch {}
+    }
+    this.usbDevice = null;
+    this.isUsbConnected.set(false);
+    this.connectedDeviceName.set(null);
+  }
+
+  /**
+   * Toggle auto-printing of incoming orders.
+   */
+  toggleAutoPrint(): void {
+    this.autoPrintEnabled.update(val => !val);
+  }
+
+  /**
+   * Sends raw ESC/POS commands directly to physical hardware if connected,
+   * or falls back to browser print dialog.
+   */
+  async printDirectly(order: Order, tenantName: string): Promise<boolean> {
+    const rawBytes = this.generateEscPosBuffer(order, tenantName);
+
+    // Direct Web Bluetooth transmission
+    if (this.isBluetoothConnected() && this.bluetoothCharacteristic) {
+      try {
+        this.isPrinting.set(true);
+        // Split into 100-byte chunks to fit BLE MTU limits
+        const chunkSize = 100;
+        for (let i = 0; i < rawBytes.length; i += chunkSize) {
+          const chunk = rawBytes.slice(i, i + chunkSize);
+          await this.bluetoothCharacteristic.writeValue(chunk);
+        }
+        return true;
+      } catch (err: any) {
+        this.lastError.set(`BLE print error: ${err.message}`);
+      } finally {
+        this.isPrinting.set(false);
+      }
+    }
+
+    // Direct WebUSB transmission
+    if (this.isUsbConnected() && this.usbDevice) {
+      try {
+        this.isPrinting.set(true);
+        await this.usbDevice.transferOut(this.usbEndpointNumber, rawBytes);
+        return true;
+      } catch (err: any) {
+        this.lastError.set(`USB print error: ${err.message}`);
+      } finally {
+        this.isPrinting.set(false);
+      }
+    }
+
+    // Fallback: Browser print dialog popup
+    this.printKotSlip(order, tenantName);
+    return true;
+  }
 
   /**
    * Generates a printable Kitchen Order Ticket (KOT) slip and triggers print.

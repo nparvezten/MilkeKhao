@@ -1,7 +1,7 @@
 # 🍛 MilkeKhao — State & Handoff Document (`state.md`)
 
-> **Last Updated:** 2026-09-05T22:23:30+05:30  
-> **Project Stage:** Enterprise Production-Ready MVP (All Core Phases + Enhancements + 47 Unit Tests Passing)  
+> **Last Updated:** 2026-09-10T22:25:00+05:30  
+> **Project Stage:** Enterprise Production-Ready MVP + Multi-Cloud Launch + Direct Hardware Printing + Live GPS Telemetry (54 Automated Tests Passing 100%)  
 > **Repository Root:** `/Users/parvezkhan/Projects/AntigravityProjects/MilkeKhao`
 
 ---
@@ -15,13 +15,15 @@
   * **CQRS Dispatch:** `Mediator` (MIT-licensed source generator by martinothamar — zero commercial lock-in, replacing MediatR).
   * **Database & ORM:** EF Core 9 with PostgreSQL (`Npgsql.EntityFrameworkCore.PostgreSQL`) and InMemory dev provider.
   * **Caching:** `Microsoft.Extensions.Caching.StackExchangeRedis` (MIT) + `ICacheService` abstraction for tenant caching.
-  * **Real-time Pipeline:** ASP.NET Core SignalR (`/hubs/orders`) with tenant group isolation (`tenant_{tenantId}`).
+  * **Real-time Pipeline:** ASP.NET Core SignalR (`/hubs/orders`) with tenant group isolation (`tenant_{tenantId}`) + Driver GPS coordinate streaming (`BroadcastDriverLocation`).
   * **Security & Auth:** Short-lived JWT access tokens (15-min) + rotating refresh tokens with claims (`tenant_id`, `role`, `user_id`, `email`).
   * **PII Protection:** AES-256 field encryption for customer addresses/phones + HMAC-SHA256 blind indexing for exact phone lookups.
   * **SAST & Security:** `SecurityCodeScan.VS2019` Roslyn analyzer (0 warnings), `.semgrep.yml` rules, `.github/workflows/vapt.yml` (SAST + OWASP ZAP DAST).
 * **Frontend Stack:**
   * **Framework:** Angular 22+ Standalone Components with Signals and Reactive State.
   * **Design System:** "Spiced Saffron & Emerald Mint" dark-mode glassmorphism theme (`styles.css`).
+  * **Hardware Integration:** Direct Web Bluetooth (`navigator.bluetooth`) and WebUSB (`navigator.usb`) ESC/POS thermal printing with Auto-Print incoming triggers.
+  * **Telemetry & Tracking:** Real-time driver GPS tracker (`DriverLocationService`), visual route map, and Web Push Notifications (`PushNotificationService`).
   * **Mobile Packaging:** Capacitor 8.x (`@capacitor/android`, `@capacitor/ios` — MIT-licensed), sharing the single Angular codebase.
   * **Test Runner:** Vitest (`ng test --watch=false`).
 
@@ -29,7 +31,7 @@
 
 ## 🚀 2. Current Implementation Status
 
-All 11 planned roadmap phases plus production enhancements and commercial features are **100% implemented, tested, and verified**:
+All 11 planned roadmap phases plus production enhancements, multi-cloud deployment scripts, hardware printing, and live GPS tracking are **100% implemented, tested, and verified**:
 
 ### A. Core Architecture & Domains (Phases 0–6)
 - ✅ **Tenant Scoping:** `ITenantScoped` on all aggregates (`Tenant`, `Order`, `MenuItem`, `Category`, `User`, `Driver`, `Coupon`).
@@ -49,17 +51,29 @@ All 11 planned roadmap phases plus production enhancements and commercial featur
 
 ### C. Multi-Channel Notifications & Audio/Print Features
 - ✅ **Real-Time SignalR:** In-session order streaming for customer tracking, Kitchen KDS, and Driver Dispatch.
+- ✅ **Background Web Push:** Browser Push Notification API (`PushNotificationService.ts`) for background milestone alerts when tabs are closed.
 - ✅ **Out-of-Session Senders:** SMTP transactional email (`SmtpEmailNotificationSender.cs`), Twilio SMS (`TwilioSmsNotificationSender.cs`), and WhatsApp Cloud API (`WhatsAppCloudApiNotificationSender.cs`).
 - ✅ **Kitchen Audio Alerts:** Web Audio API synthesized dual-tone chime (`880Hz` ➔ `1320Hz`) triggered on new orders with audio mute toggle (`AudioAlertService.ts`).
-- ✅ **ESC/POS Thermal Printing:** One-click Kitchen Order Ticket (KOT) printing (`80mm/58mm`) and binary ESC/POS command buffer generator (`ThermalPrinterService.ts`).
+- ✅ **Direct Hardware ESC/POS Thermal Printing:** One-click Kitchen Order Ticket (KOT) printing (`80mm/58mm`), binary ESC/POS command buffer generator, and direct Web Bluetooth / WebUSB hardware communication with auto-print (`ThermalPrinterService.ts`, `KitchenKdsComponent.ts`).
 
-### D. Partner Onboarding & Commercial Features
+### D. Real-Time GPS Tracking & Interactive Delivery Map
+- ✅ **Driver GPS Telemetry:** Device GPS watcher and SignalR coordinate broadcaster (`DriverLocationService.ts`, `DriverDashboardComponent.ts`).
+- ✅ **Customer Live Route Map:** Real-time visual route animation (Restaurant 🏢 ➔ Moving Courier 🛵 ➔ Customer 📍) with speed telemetry and dynamic ETA countdown in `OrderTrackingComponent.ts`.
+
+### E. Multi-Cloud Deployment & Operations (AWS, GCP, Azure)
+- ✅ **Universal Multi-Cloud Orchestrator:** `infra/deploy-cloud.sh` with interactive selector and cost comparison matrix.
+- ✅ **GCP Cloud Run Script:** `infra/gcp/deploy-gcp.sh` (Scales to 0, cheapest MVP tier ~$0–$12/mo).
+- ✅ **Azure Container Apps Script:** `infra/azure/deploy-azure.sh` (Enterprise Azure integration ~$10–$18/mo).
+- ✅ **AWS App Runner / ECS Script:** `infra/aws/deploy-aws.sh` (High scale ~$15–$28/mo).
+- ✅ **Cloud Deployment Guide:** `CLOUD_DEPLOYMENT_GUIDE.md` documenting prerequisites, costing, and environment setup.
+
+### F. Partner Onboarding & Commercial Features
 - ✅ **Self-Serve Partner Onboarding:** 4-step glassmorphism wizard (`OnboardingComponent.ts`) for brand setup, direct UPI payouts, fulfillment selection, and auto-seeded starter menu.
 - ✅ **Coupon & Discount Engine:** `Coupon` domain entity, `ValidateCouponQuery` CQRS handler, built-in promo codes (`FIRST50` - 50% off up to ₹100, `FLAT100` - ₹100 off on ₹399+, `MILKE20` - 20% off), promo chips, and real-time discount breakdown in `CartDrawerComponent.ts`.
 
 ---
 
-## 🧪 3. Verified Automated Test Suite (47 Tests — 100% Pass)
+## 🧪 3. Verified Automated Test Suite (54 Tests — 100% Pass)
 
 ### Backend (.NET xUnit — 24 Tests)
 ```bash
@@ -76,7 +90,7 @@ dotnet test MilkeKhao.sln
 * `OrderCommandTests`: Order placement calculation and item pricing integrity.
 * `AnalyticsTests`: Sales summary, top selling items ranking, and fulfillment mode breakdowns.
 
-### Frontend (Angular Vitest — 23 Tests)
+### Frontend (Angular Vitest — 30 Tests)
 ```bash
 cd src/frontend && npx ng test --watch=false
 ```
@@ -85,7 +99,9 @@ cd src/frontend && npx ng test --watch=false
 * `tenant.service.spec.ts`: Default tenant initialization, tenant switching by ID, and dynamic partner registration.
 * `kitchen-kds.spec.ts`: Pipeline bucket categorization (`pendingOrders`, `acceptedOrders`, `preparingOrders`, `readyOrders`) and kitchen status updates.
 * `onboarding.spec.ts`: 4-step wizard validation, automated slug & UPI VPA generation, and restaurant registration.
-* `thermal-printer.service.spec.ts`: Binary ESC/POS command generation (`ESC @` init, `GS !` double height, `GS V` paper cut).
+* `thermal-printer.service.spec.ts`: Binary ESC/POS command generation (`ESC @` init, `GS !` double height, `GS V` paper cut), auto-print toggles, and BLE/USB status checks.
+* `driver-location.service.spec.ts`: Live GPS broadcasting, route progression telemetry, speed/ETA calculations, and timer teardown.
+* `push-notification.service.spec.ts`: Browser Web Push API check, permission tracking, and milestone alert dispatch.
 * `audio-alert.service.spec.ts`: Mute / unmute state toggling and Web Audio API error safety.
 
 ---
